@@ -1,7 +1,7 @@
 """Published sources for every register, in one place.
 
 Each entry is (citation, link). Citations use *asterisks* for italics. The same list is shown on the
-app's Sources page and on the Earth Systems Arcade sources page (geo-tools.netlify.app/citations/).
+app's Sources page and on the Earth Systems Arcade sources page (dougalien.github.io/geo-tools/citations/).
 Values were checked against the papers and data files on 2026-10-27; the paper bibliography is in
 Vol. 1 Finite Response Mapping (path_response_redshift_arxiv_v33.tex).
 """
@@ -100,7 +100,7 @@ def page():
     st.title("Sources")
     st.markdown("Every register divides a published measurement by its ideal. These are the publications and data "
                 "files behind each page. The full list for all Dougalien Systems apps is at "
-                "[geo-tools.netlify.app/citations](https://geo-tools.netlify.app/citations/#finite-deformable-geometry).")
+                "[dougalien.github.io/geo-tools/citations/](https://dougalien.github.io/geo-tools/citations/#finite-deformable-geometry).")
     for group, items in SOURCES:
         st.subheader(group)
         st.markdown("\n".join(f"- {c}" + (f" [{u}]({u})" if u else "") for c, u in items))
