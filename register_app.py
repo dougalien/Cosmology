@@ -20,7 +20,7 @@ BLACK, REF = brand.INK, brand.SLATE
 PALETTE = [brand.RUST, "#2E7D6B", "#7A5195", "#C08A3E", "#8C564B", "#3B6FB6"]
 
 
-def ref_line(fig, y=1.0, label="ideal, Q = 1 (never reached)"):
+def ref_line(fig, y=1.0, label="ideal, Q = 1"):
     fig.add_hline(opacity=1, y=y, line=dict(color=REF, dash="dash", width=1.5), annotation_text=label,
                   annotation_position="top left")
 
@@ -71,7 +71,7 @@ SPHERE_LIMIT = 6 * np.sqrt(np.pi)  # the value the faceted sequence approaches; 
 # ------------------------------------------------------------------ pages
 def page_premise():
     st.title("Finite Deformable Geometry")
-    st.markdown("### The geometry of the universe, by measurement only")
+    st.markdown("### The geometry of the universe, read from measurements")
     st.markdown("""
 #### 1. What is a register?
 A register is a measured value divided by its ideal value, so the ideal sits at **Q = 1**. The ideal is a reference
@@ -84,10 +84,8 @@ ideal, its size and how it changes, is the information.**
 #### 2. Why use registers?
 - **They use only what arrives at a detector:** counts, flux ratios, angles, frequency ratios (redshift) and time ratios.
 - **They carry no units and no size,** so populations of very different scale can be laid side by side.
-- **They need no model to compute.** The ideal is a reference to measure against, not an assumption about what the object is.
+- **They need no model to compute.** The ideal is a reference point to measure against.
 - **Each one stands alone,** so one register can be added, questioned or replaced without disturbing the others.
-- **Where an ideal involves infinity or π,** the register works with finite measured quantities and treats the ideal only
-  as the direction they head in.
 
 #### 3. The assumptions currently accepted by the community
 The standard picture of the universe begins with assumptions that are not themselves measured:
@@ -97,8 +95,7 @@ The standard picture of the universe begins with assumptions that are not themse
 - **Dark matter and dark energy,** about 95% of the content, added so that the model fits the data.
 - **Infinite series and limits** in the analysis itself, such as the spherical-harmonic expansion of the microwave sky.
 
-The registers assume none of these. They do not show that the assumptions are wrong; they show what the measurements look
-like without them.
+The registers start from the measurements instead, so they show what the data look like before any of these are added.
 
 #### 4. The no-fixed-point argument
 Within our Galaxy, distance can be measured directly: parallax uses Earth's own orbit as a measured baseline. Beyond the
@@ -110,7 +107,7 @@ calculated quantity, its page says which one. The *No fixed point* page works th
 
 #### Together, these registers are the shape of the universe
 Each register is one population's departure from its ideal. Read side by side, they are the geometry of the universe as
-measured from here: no expansion assumed, no fixed point required, and nothing added to make things fit.
+measured from here.
 """)
     st.subheader("The registers")
     st.dataframe(pd.DataFrame([
@@ -125,8 +122,8 @@ measured from here: no expansion assumed, no fixed point required, and nothing a
         ["Clock", "Clocks at measured g", "frequency shift matching local g", "single value", "Pound–Rebka, lattice clocks"],
         ["Deflection", "Light passing the Sun", "light bends as matter does", "single value", "VLBI, Cassini"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), hide_index=True, width="stretch")
-    st.caption("The CMB power spectrum is not used. Its multipole index comes from a spherical-harmonic expansion, an infinite series, "
-               "so it is not a measurement-only quantity.")
+    st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
+               "an infinite series.")
 
 
 def mini_chart(fig, xtitle, ytitle, xticks=None, yticks=None, xlog=False, ylog=False, ideal=1.0, ideal_label="ideal"):
@@ -154,8 +151,8 @@ def overview_card(col, title, fig, reads):
 
 def page_overview():
     st.title("All registers at a glance")
-    st.markdown("Each card is one register: the measurement against its ideal, drawn as a dashed slate line that no "
-                "population reaches. Nothing here is fitted. Open a register in the sidebar for its controls and details.")
+    st.markdown("Each card is one register: the measurement against its ideal, drawn as a dashed slate line. "
+                "Open a register in the sidebar for its controls and details.")
     cards = []
 
     # Shape: solids and spheres
@@ -165,7 +162,7 @@ def page_overview():
     mini_chart(fig, "number of faces", "Q_v = S^1.5 / V", xticks=[4, 10, 100, 1000, 10000, 100000], xlog=True,
                ideal=SPHERE_LIMIT, ideal_label="perfect sphere")
     fig.update_yaxes(range=[10.2, 20])
-    cards.append(("Shape: solids and spheres", fig, "More faces bring a body closer to the sphere; no finite number of faces gets there."))
+    cards.append(("Shape: solids and spheres", fig, "Every added face brings a body closer to the sphere."))
 
     # Shape: outlines
     fig = go.Figure()
@@ -176,7 +173,7 @@ def page_overview():
     mini_chart(fig, "number of sides", "Q_a = P² / A", xticks=[3, 10, 100, 1000], xlog=True,
                ideal=4 * np.pi, ideal_label="perfect circle")
     fig.update_yaxes(range=[12.2, 21.5])
-    cards.append(("Shape: outlines (2D)", fig, "Polygons doubled again and again close in on the circle and never reach it."))
+    cards.append(("Shape: outlines (2D)", fig, "Polygons close in on the circle each time their sides are doubled."))
 
     # Flux dimming
     zf, Qf, sf, *_ = pantheon_plus_register("zCMB", 0.015, 0.06, 17, R.pantheon_cov_available())
@@ -247,7 +244,7 @@ def page_same_shape():
         "Each redshift register is set to Q = 1 by the nearby population, so its departure from the ideal is zero by "
         "construction at z = 0. Read from far to near, the departure shrinks toward zero as the light's path to us shortens. "
         "That is the same pattern as the shape registers, where the departure shrinks toward zero as a body gains faces; "
-        "in both cases the zero point is a limit that is never actually reached (a path of zero length, infinitely many faces).\n\n"
+        "in both cases the zero point is a limit (a path of zero length, infinitely many faces).\n\n"
         "To test whether the registers share a shape, plot them against **1 + z** on log–log axes. If a register is a power "
         "of (1 + z), Q = (1 + z)^p, its departure ln Q = p · ln(1 + z) falls on a straight line that runs down to zero at "
         "z = 0, and p measures how quickly the departure grows with path. The same shape with a different strength gives "
@@ -349,8 +346,8 @@ def page_same_shape():
                      hide_index=True, width="stretch")
     st.caption("The two registers come from different populations, supernovae and galaxy pairs, measured by different surveys. "
                "The exponents add to 1 within their errors. Point by point, the two high-redshift products sit within 1σ of "
-               "1 + z and the two low-redshift ones fall short of it, by about 1σ and 2σ (see the table). The same relation is also what an expanding-space picture "
-               "predicts, so it shows the registers agree with each other rather than choosing between pictures.")
+               "1 + z and the two low-redshift ones fall short of it, by about 1σ and 2σ (see the table). An expanding-space picture "
+               "predicts the same relation, so this is a check that the two registers agree with each other.")
 
 
 def page_shape():
@@ -358,7 +355,7 @@ def page_shape():
     st.markdown(
         "**Q_v = S^(3/2) / V** compares a body's surface S with the volume V it holds. It has no units and does not change "
         "with size. Every number here comes straight from a triangle mesh: the area is a sum of triangle areas and the "
-        "volume a sum of small tetrahedra, using only sums, products and square roots."
+        "volume a sum of small tetrahedra."
     )
     max_level = st.sidebar.slider("Finest faceted-sphere level", 2, 7, 6,
                                   help="Each level splits every triangle into four: 20·4^level faces.")
@@ -372,16 +369,14 @@ def page_shape():
         fig.add_trace(go.Scatter(x=[20] + list(ic.faces), y=[pl.Q_v.iloc[-1]] + list(ic.Q_v), mode="lines+markers",
                                  marker=dict(size=7, color=PALETTE[2]), name="Faceted spheres (icosahedron split again and again)"))
         fig.add_hline(opacity=1, y=SPHERE_LIMIT, line=dict(color=REF, dash="dash"),
-                      annotation_text="perfect sphere: needs infinitely many faces")
+                      annotation_text="perfect sphere")
         base_layout(fig, "number of faces", "Q_v", xlog=True, height=520)
         fig.update_yaxes(range=[10.3, 20.5])
         st.plotly_chart(fig, width="stretch")
     with c2:
         st.dataframe(df.style.format({"Q_v": "{:.5f}"}), hide_index=True, width="stretch", height=430)
-    st.info(f"Every added face brings the body closer to the sphere, and no finite number of faces gets there. At level "
-            f"{max_level} the body has {20 * 4 ** max_level:,} faces and Q_v = {df.Q_v.iloc[-1]:.6f}. The sphere itself, the "
-            "ideal, belongs to infinity. That is why the register uses the finite bodies and treats the sphere only as the "
-            "direction they head in.")
+    st.info(f"At level {max_level} the body has {20 * 4 ** max_level:,} faces and Q_v = {df.Q_v.iloc[-1]:.6f}, "
+            f"against {SPHERE_LIMIT:.6f} for the sphere. Each level closes about three quarters of the remaining gap.")
 
     st.subheader("Real bodies")
     c1, c2 = st.columns(2)
@@ -415,8 +410,7 @@ def page_outline():
     st.title("Shape: outlines (2D)")
     st.markdown(
         "**Q_a = P² / A** compares an outline's boundary length P with the area A it encloses. It has no units and does "
-        "not change with size. The ideal is a perfect circle, which needs infinitely many sides. Every value here is built "
-        "from finite outlines, using only sums, products and square roots."
+        "not change with size. The ideal is a perfect circle."
     )
     tab1, tab2, tab3 = st.tabs(["Regular polygons", "Orbits", "Craters on the Moon and Mars"])
     with tab1:
@@ -428,13 +422,13 @@ def page_outline():
             fig.add_trace(go.Scatter(x=[n for n, _ in seq], y=[q for _, q in seq], mode="lines+markers",
                                      marker=dict(size=7, color=PALETTE[i]), name=f"starting from {n0} sides"))
             rows += [dict(sides=n, Q_a=q) for n, q in seq]
-        fig.add_hline(opacity=1, y=CIRCLE_LIMIT, line=dict(color=REF, dash="dash"), annotation_text="perfect circle: needs infinitely many sides")
+        fig.add_hline(opacity=1, y=CIRCLE_LIMIT, line=dict(color=REF, dash="dash"), annotation_text="perfect circle")
         base_layout(fig, "number of sides", "Q_a", xlog=True, height=480)
         fig.update_yaxes(range=[12.3, 21.3])
         st.plotly_chart(fig, width="stretch")
         st.caption("Each polygon is drawn inside the same circle and its sides are doubled again and again, the way Archimedes "
-                   "did it: the new side is √(2 − √(4 − s²)). No angle and no π is used. Every doubling brings Q_a closer to the "
-                   "circle, and no finite polygon reaches it.")
+                   "did it: the new side is √(2 − √(4 − s²)), with no angles or π. Every doubling brings Q_a closer to the "
+                   "circle.")
         df = pd.DataFrame(rows).drop_duplicates("sides").sort_values("sides")
         st.dataframe(df.style.format({"Q_a": "{:.9f}"}), hide_index=True, width="stretch", height=260)
     with tab2:
@@ -454,7 +448,7 @@ def page_outline():
         st.dataframe(od.style.format({"eccentricity": "{:.4f}", "Q_a": "{:.6f}", "Q_a / circle": "{:.6f}"}),
                      hide_index=True, width="stretch")
         st.caption("Each orbit is traced as a fine polygon from its measured eccentricity (JPL). The planets sit within a "
-                   "fraction of a percent of the circle without reaching it; the comets sit far above it.")
+                   "fraction of a percent of the circle; the comets sit far above it.")
     with tab3:
         fig = go.Figure()
         for i, body in enumerate(["moon", "mars"]):
@@ -469,14 +463,13 @@ def page_outline():
         st.plotly_chart(fig, width="stretch")
         st.caption("About 1.3 million lunar craters (Robbins 2018) and 385,000 Martian craters, each from the ellipse fitted to "
                    "its traced rim. Points are medians and bars the 5th to 95th percentiles. Craters on both bodies stay close "
-                   "to the circle, and larger craters come closer than small ones, but none sits on it.")
+                   "to the circle, and larger craters come closer than small ones.")
 
 
 def page_flux():
     st.title("Flux dimming")
     st.markdown("Q = 10^((m − C)/5) / z: the dimming of supernova light divided by redshift, with the nearby supernovae "
-                "setting Q = 1. Only magnitudes (flux ratios) and redshifts (frequency ratios) are used. No distance, "
-                "absolute brightness or expansion rate enters.")
+                "setting Q = 1. It is built from magnitudes (flux ratios) and redshifts (frequency ratios).")
     src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "Pantheon 2018 (40 bins)"])
     fig = go.Figure()
     if src.startswith("Pantheon+"):
@@ -560,7 +553,7 @@ def page_time():
         base_layout(fig, "redshift z", "Q_t")
     st.plotly_chart(fig, width="stretch")
     st.dataframe(pd.DataFrame(data)[["study", "b", "err", "zmin", "zmax", "n"]], hide_index=True, width="stretch")
-    st.caption("Only light-curve widths and redshifts are used: a time ratio against a frequency ratio. Studies without a "
+    st.caption("Light-curve widths (a time ratio) read against redshift (a frequency ratio). Studies without a "
                "redshift range in the local data are drawn as bands.")
 
 
@@ -576,7 +569,7 @@ def page_ageing():
     st.plotly_chart(fig, width="stretch")
     st.metric("Local rate |dz/dt|", f"{anc:.4f} ± {anc_e:.4f} per billion years")
     st.caption("Published chronometer values are quoted after a 1/(1+z) conversion that belongs to an expanding frame. "
-               "That conversion is undone here, so the register is redshift change per stellar time and nothing else. "
+               "That conversion is undone here, so the register is redshift change per stellar time. "
                "Stellar ages come from population models.")
 
 
@@ -600,14 +593,14 @@ def page_angle():
     st.plotly_chart(fig, width="stretch")
     st.dataframe(pd.DataFrame(dict(z=z, theta_deg=R.ANGLES["theta"], err=R.ANGLES["err"], Q=q, dQ=e, source=R.ANGLES["source"])),
                  hide_index=True, width="stretch")
-    st.caption("Angles and redshifts only. The five points come from different surveys and galaxy types.")
+    st.caption("The five points come from different surveys and galaxy types.")
 
 
 def page_cusp():
     st.title("Cusp flux ratio")
     st.markdown("When a lens splits one source into a tight triplet of images, a perfectly smooth lens would make the middle "
                 "image as bright as the two outer ones together, in the limit of a closed triplet. The register is "
-                "**Q = F_middle / (F_outer1 + F_outer2)**, from radio flux ratios only.")
+                "**Q = F_middle / (F_outer1 + F_outer2)**, from radio flux ratios.")
     fig = go.Figure()
     rows = []
     for i, (k, v) in enumerate(R.CUSP.items()):
@@ -654,9 +647,9 @@ def page_rotation():
     c1.metric("Galaxies shown", ng)
     c2.metric("Median Q inside 1 disk scale length", f"{np.nanmedian(q[rr < 1]):.2f}")
     c3.metric("Median Q beyond 5 disk scale lengths", f"{np.nanmedian(q[rr > 5]):.1f}")
-    st.caption("Rotation speeds are Doppler shifts, which are frequency ratios. Radius over disk scale length is a ratio of two "
-               "angles on the sky, so the default axis uses no distance. The visible-matter side is built from light with an "
-               "assumed mass-to-light ratio and a catalog distance; those are the calculated parts of this register.")
+    st.caption("Rotation speeds are Doppler shifts, which are frequency ratios, and radius over disk scale length is a ratio of "
+               "two angles on the sky. The visible-matter side needs a mass-to-light ratio and a catalog distance, set in the sidebar "
+               "and taken from SPARC.")
 
 
 def page_single():
@@ -666,12 +659,12 @@ def page_single():
         st.subheader("Clock")
         st.latex(r"Q_\tau = \frac{(\Delta\nu/\nu)\,c^2}{g\,h}")
         st.metric("Measured", "Q_τ = 1", "Pound–Rebka–Snider (~1%), lattice clocks (parts in 10⁵)", delta_color="off")
-        st.caption("Only tests where g is measured on the spot qualify. All of them sit at Earth's surface gravity, so this is one point, not a curve.")
+        st.caption("Each test measures g on the spot. All of them sit at Earth's surface gravity, so this is one point for now.")
     with c2:
         st.subheader("Deflection")
         st.latex(r"Q_\lambda = \frac{\alpha_{obs}}{\alpha_{traj}} = 1 + \gamma")
         st.metric("Measured", "Q_λ = 2", "γ known to 2.3×10⁻⁵ (Cassini)", delta_color="off")
-        st.caption("Light passing the Sun bends twice as much as a body moving at the same speed would. Measured inside the Solar System only.")
+        st.caption("Light passing the Sun bends twice as much as a body moving at the same speed would.")
 
 
 def page_motion():
@@ -690,7 +683,7 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
     c1.metric("Redshift (measured)", f"z = {R.M31['v_helio'] / R.C_KMS:.5f}",
               f"closing at {-R.M31['v_helio']:.0f} ± {R.M31['v_helio_e']:.0f} km/s along the line of sight", delta_color="off")
     c2.metric("Sideways drift (measured)", f"{mu:.0f} ± {mu_e:.0f} µas/yr",
-              "an angle per year, not a speed", delta_color="off")
+              "an angle per year", delta_color="off")
     c3.metric("Distance (calculated)", f"{min(d for _, d, _ in R.M31_DISTANCES)}–{max(d for _, d, _ in R.M31_DISTANCES)} kpc",
               "from the Cepheid / TRGB / eclipsing-binary ladder", delta_color="off")
     st.markdown("The line-of-sight closing speed between the Sun and Andromeda is a Doppler measurement. A sideways speed "
@@ -720,7 +713,7 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
         v_pick, v_pick_e = R.m31_transverse(d_pick)
         st.caption(f"At your assumed {d_pick} kpc the drift becomes {float(v_pick):.0f} ± {float(v_pick_e):.0f} km/s sideways. "
                    "Speed is in direct proportion to the distance chosen: double the distance and you double the speed. Each published distance "
-                   "is a different guess at where on this line Andromeda sits.")
+                   "puts Andromeda at a different point on this line.")
     with c2:
         vc = np.linspace(200, 260, 61)
         fig = go.Figure()
@@ -734,14 +727,14 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
         fig.update_yaxes(range=[0, 330])
         fig.update_layout(legend=dict(orientation="h", y=-0.3, font=dict(size=11)))
         st.plotly_chart(fig, width="stretch")
-        st.caption(f"The often-quoted ~110 km/s is not measured. It is the 300 km/s Doppler speed minus the Sun's own orbit, "
-                   f"which has to be assumed. At {v_c} km/s the closing speed is {-float(R.m31_galactocentric_radial(v_c)):.0f} km/s. "
+        st.caption(f"The often-quoted ~110 km/s is the 300 km/s Doppler speed minus the Sun's own orbital speed, "
+                   f"which comes from a Galaxy model. At {v_c} km/s the closing speed is {-float(R.m31_galactocentric_radial(v_c)):.0f} km/s. "
                    "Changing the frame changes the speed by almost a factor of three.")
 
-    st.header("2. A measurement-only way out: looming")
+    st.header("2. Looming: time to contact from angles")
     st.markdown("An object coming toward you grows on the sky. Its angular size divided by its rate of growth is the **time "
-                "to contact**, τ = θ / (dθ/dt), and no distance enters. Flies and drivers use the same quantity. Multiply τ "
-                "by the measured closing speed and you get a distance built from measurements alone.")
+                "to contact**, τ = θ / (dθ/dt). Flies and drivers use the same quantity. Multiply τ "
+                "by the measured closing speed and you get a distance.")
     tau, rel, rate1 = R.looming(d_pick)
     _, _, rate_full = R.looming(d_pick, R.M31["theta_deg"])
     c1, c2, c3 = st.columns(3)
@@ -749,15 +742,13 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
     c2.metric("Growth of Andromeda's full width", f"{float(rate_full):.1f} µas/yr", f"{R.M31['theta_deg']}° across", delta_color="off")
     c3.metric("Growth of a 1° separation", f"{float(rate1):.1f} µas/yr", "e.g. between two of its star clusters", delta_color="off")
     st.markdown(f"Gaia measures Andromeda's whole sideways drift to about ±{mu_e:.0f} µas/yr. The looming signal is a few µas/yr, "
-                "below that today. Precision improves with time baseline, so this is a test that waits on more years of data, "
-                "not on a model.")
+                "below that today. Precision grows with the time baseline, so more years of Gaia data will bring it within reach.")
 
     st.header("3. The sky's \"hotspot\": two rest frames that disagree")
     dr = R.dipole_register()
     st.markdown(f"""
 The microwave sky is **{R.CMB_DIPOLE['dT_mK']:.3f} mK** warmer in one direction, a fraction **{dr['beta']:.2e}** of its
-{R.CMB_DIPOLE['T0_K']} K temperature. That is measured. Reading it as our motion gives **{dr['v_kms']:.0f} km/s**, which is a
-calculation that assumes the whole dipole is motion. If it is, distant quasars should bunch toward the same direction by a
+{R.CMB_DIPOLE['T0_K']} K temperature. That is measured. Reading all of it as our motion gives **{dr['v_kms']:.0f} km/s**. If that reading is right, distant quasars should bunch toward the same direction by a
 predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too strongly.
 """)
     c1, c2 = st.columns([3, 2])
@@ -806,7 +797,7 @@ predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too st
         ["Our speed through the universe", "CMB temperature dipole", "that the dipole is all motion", "a CMB rest frame (quasars disagree)"],
         ["Distance and speed of far galaxies", "redshift", "that redshift is recession", "expansion"],
     ], columns=["Quantity", "What is measured", "What has to be added", "Assumption"]), hide_index=True, width="stretch")
-    st.caption("The registers stay in the left-hand column: redshift, angle, flux and time ratios.")
+    st.caption("The registers are built from the left-hand column: redshift, angle, flux and time ratios.")
 
 
 PAGES = {

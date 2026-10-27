@@ -2,7 +2,7 @@
 
 # Finite Deformable Geometry
 
-The geometry of the universe, by measurement only. A [Dougalien Systems](https://dougalien.com) app.
+The geometry of the universe, read from measurements. A [Dougalien Systems](https://dougalien.com) app.
 
 **Live app:** https://doug-cosmology.streamlit.app/
 
