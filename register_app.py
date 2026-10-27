@@ -11,6 +11,7 @@ import streamlit as st
 
 import dougalien_brand as brand
 import registers as R
+import sources
 
 st.set_page_config(page_title="Finite Deformable Geometry • Dougalien Systems", page_icon=brand.page_icon("🪐"), layout="wide")
 brand.apply_branding()
@@ -822,6 +823,7 @@ PAGES = {
     "Rotation": page_rotation,
     "Clock & deflection": page_single,
     "No fixed point": page_motion,
+    "Sources": sources.page,
 }
 
 st.sidebar.title("FDG registers")
