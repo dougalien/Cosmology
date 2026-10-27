@@ -87,6 +87,8 @@ SOURCES = [
          "https://ssd.jpl.nasa.gov/"),
         ("Planet flattening: NASA Planetary Fact Sheet (Earth 1/298.257 is the WGS 84 value).",
          "https://nssdc.gsfc.nasa.gov/planetary/factsheet/"),
+        ("Kuhn, J. R., Bush, R., Emilio, M., & Scholl, I. F. (2012). The precise solar shape and its variability. *Science*, 337, 1638–1640. The Sun's flattening: equator-pole radius difference 7.2 ± 0.5 milliarcseconds, about 7.5 × 10⁻⁶.",
+         "https://doi.org/10.1126/science.1223231"),
         ("Wadell, H. (1932). Volume, shape, and roundness of rock particles. *The Journal of Geology*, 40(5), 443–451. The shape-ratio idea behind Q_v.",
          "https://doi.org/10.1086/623964"),
     ]),

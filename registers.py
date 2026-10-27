@@ -146,8 +146,9 @@ def lumpy_body(level, roughness, seed=0):
     return v * r[:, None], f
 
 
-# Flattening values (equatorial - polar) / equatorial
-BODIES = {"Sun": 9e-6, "Earth": 1 / 298.257, "Mars": 0.00589, "Saturn": 0.09796, "Jupiter": 0.06487}
+# Flattening values (equatorial - polar) / equatorial. Planets: NASA Planetary Fact Sheet.
+# Sun: equator-pole radius difference 7.2 mas (Kuhn et al. 2012, SDO/HMI) over a 959.63 arcsec mean radius.
+BODIES = {"Sun": 7.5e-6, "Earth": 1 / 298.257, "Mars": 0.00589, "Saturn": 0.09796, "Jupiter": 0.06487}
 
 
 # ------------------------------------------------------- flux dimming / redshift
