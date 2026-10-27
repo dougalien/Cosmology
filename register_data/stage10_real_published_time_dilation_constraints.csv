@@ -1,0 +1,4 @@
+study,object_type,sample_size,z_min,z_max,b,sigma_stat,sigma_sys,sigma_total_quadrature,sigma_conservative,source_url,notes
+White et al. 2024 DES-SN5YR,Type Ia supernovae,1504.0,0.1,1.2,1.003,0.005,0.01,0.011180339887498949,0.015,https://academic.oup.com/mnras/article/533/3/3365/7738388,Reported b=1.003 ±0.005 stat ±0.010 sys using 1504 DES Type Ia SNe.
+Goldhaber et al. 2001,Type Ia supernovae,35.0,0.3,0.7,1.07,0.06,,0.06,0.06,https://academic.oup.com/mnras/article/533/3/3365/7738388,White et al. 2024 summarizes Goldhaber et al. 2001 as b~1.07 ±0.06 for 35 SNe at 0.30≤z≤0.70.
+Blondin et al. 2008 spectral evolution,Type Ia supernovae,,,,0.97,0.1,,0.1,0.1,https://academic.oup.com/mnras/article/533/3/3365/7738388,White et al. 2024 summarizes Blondin et al. 2008 as b=0.97 ±0.10 from SN Ia spectral evolution.
