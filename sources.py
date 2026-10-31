@@ -65,6 +65,18 @@ SOURCES = [
         ("Bertotti, B., Iess, L., & Tortora, P. (2003). A test of general relativity using radio links with the Cassini spacecraft. *Nature*, 425, 374.",
          "https://doi.org/10.1038/nature01997"),
     ]),
+    ("Light and matter together", [
+        ("GRAVITY Collaboration (2018). Detection of the gravitational redshift in the orbit of the star S2 near the Galactic centre massive black hole. *Astronomy & Astrophysics*, 615, L15. f = 0.90 ± 0.09 ± 0.15; pericentre speed and eccentricity.",
+         "https://doi.org/10.1051/0004-6361/201833718"),
+        ("Do, T., et al. (2019). Relativistic redshift of the star S0-2 orbiting the Galactic Center supermassive black hole. *Science*, 365, 664–668. f = 0.88 ± 0.17.",
+         "https://doi.org/10.1126/science.aav8137"),
+        ("GRAVITY Collaboration (2019). Test of the Einstein equivalence principle near the Galactic Center supermassive black hole. *Physical Review Letters*, 122, 101102. f = 0.97 ± 0.05 ± 0.05 with 2018 data added.",
+         "https://arxiv.org/abs/1902.04193"),
+        ("Weisberg, J. M., & Huang, Y. (2016). Relativistic measurements from timing the binary pulsar PSR B1913+16. *The Astrophysical Journal*, 829, 55. Table 2 timing parameters.",
+         "https://arxiv.org/abs/1606.02744"),
+        ("Kramer, M., et al. (2006). Tests of general relativity from timing the double pulsar. *Science*, 314, 97–102. s_obs/s_pred = 0.99987 ± 0.00050.",
+         "https://arxiv.org/abs/astro-ph/0609417"),
+    ]),
     ("No fixed point (relative motion)", [
         ("Planck Collaboration (2020). Planck 2018 results. I. *Astronomy & Astrophysics*, 641, A1. Table 2: the CMB dipole, 3362.08 µK toward (l, b) = (264.021°, 48.253°).",
          "https://doi.org/10.1051/0004-6361/201833880"),

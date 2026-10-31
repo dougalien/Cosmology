@@ -121,6 +121,7 @@ measured from here.
         ["Rotation", "Disk galaxies", "rotation set by visible matter alone", "radius / disk scale", "SPARC"],
         ["Clock", "Clocks at measured g", "frequency shift matching local g", "single value", "Pound–Rebka, lattice clocks"],
         ["Deflection", "Light passing the Sun", "light bends as matter does", "single value", "VLBI, Cassini"],
+        ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), hide_index=True, width="stretch")
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
@@ -230,6 +231,19 @@ def page_overview():
     mini_chart(fig, "radius ÷ disk scale length", "g_obs ÷ g_bar", xticks=[0.1, 0.3, 1, 3, 10, 20], yticks=[1, 2, 3, 5, 10],
                xlog=True, ylog=True, ideal_label="visible matter alone")
     cards.append(("Galaxy rotation", fig, f"Median of {ng} SPARC galaxies with the middle 68% shaded: the departure grows outward."))
+
+    # Light and matter together
+    lm = pd.DataFrame(R.light_matter_table())
+    fig = go.Figure()
+    for i, r in lm.iterrows():
+        fig.add_trace(go.Scatter(x=[r.Q], y=[r.system], mode="markers", marker=dict(size=10, color=PALETTE[i % len(PALETTE)]),
+                                 error_x=dict(type="data", array=[r.err]),
+                                 hovertemplate=f"{r.system}<br>Q = {r.Q:.5g} ± {r.err:.2g}<extra></extra>"))
+    fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=2))
+    mini_chart(fig, "light register ÷ matter register", "", ideal=None)
+    fig.update_yaxes(autorange="reversed", tickfont=dict(size=10))
+    cards.append(("Light and matter together", fig, "Where both registers are read on one object (S2, binary pulsars) they agree; "
+                  "the raw Hulse–Taylor offset is the Galaxy's pull."))
 
     for i in range(0, len(cards), 2):
         cols = st.columns(2)
@@ -667,6 +681,73 @@ def page_single():
         st.caption("Light passing the Sun bends twice as much as a body moving at the same speed would.")
 
 
+def page_light_matter():
+    st.title("Light and matter together")
+    st.markdown("""
+Gravity shows in two kinds of register. A **matter register** reads how a body moves: the Doppler swing of its orbit, the
+turn of the orbit, the shrinking of its period. A **light register** reads what happens to light and clocks: a steady
+redshift, a clock running slow, a delay as light passes a mass. These systems give both registers for **the same object**,
+using only frequency ratios, times and angles. If gravity were a gap between the two, they would disagree here.
+They do not. **They move away from the ideal together, in a fixed proportion: the light shift is the square of the
+matter swing.** One cause sets both.
+""")
+    rows = R.light_matter_table()
+    df = pd.DataFrame(rows)
+    fig = go.Figure()
+    for i, r in df.iterrows():
+        fig.add_trace(go.Scatter(x=[r.Q], y=[r.system], mode="markers", name=r.system, showlegend=False,
+                                 marker=dict(size=10, color=PALETTE[i % len(PALETTE)]),
+                                 error_x=dict(type="data", array=[r.err], visible=True, thickness=1.5),
+                                 hovertemplate=f"{r.system}<br>Q = {r.Q:.5g} ± {r.err:.2g}<extra></extra>"))
+    fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="ideal, Q = 1",
+                  annotation_position="top")
+    base_layout(fig, "Q (light register against matter register)", "", height=420)
+    fig.update_yaxes(autorange="reversed")
+    st.plotly_chart(fig, width="stretch")
+
+    st.header("1. S2 at the centre of the Galaxy")
+    grav, side = R.s2_predicted_shift()
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Orbital swing at closest approach", f"{R.S2_ORBIT['v_peri_kms']:.0f} km/s", "Doppler shift plus the track on the sky", delta_color="off")
+    c2.metric("Extra redshift predicted from the swing²", f"{grav + side:.0f} km/s",
+              f"{grav:.0f} gravitational + {side:.0f} from sideways motion", delta_color="off")
+    c3.metric("Measured / predicted (latest)", f"{R.S2_REDSHIFT[-1][1]:.2f} ± {df.err.iloc[2]:.2f}", "Q = 1 is the ideal", delta_color="off")
+    st.caption("The prediction needs only the swing, the orbit's shape and its tilt on the sky: frequencies and angles. "
+               "The published fits also solve for the distance to the Galactic centre and the central mass at the same time, "
+               "so the quoted errors carry that fit with them.")
+
+    st.header("2. Binary pulsars: time only")
+    ht = R.hulse_taylor_register()
+    st.markdown("A pulsar is a clock in orbit. Its arrival times give three separate things: how fast the orbit **turns** "
+                "(matter), how much the clock **slows and speeds** around the orbit (light), and how fast the orbit "
+                "**shrinks**. The first two fix the system; the third is then a free check.")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Shrink: measured / predicted, raw", f"{ht['raw'][0]:.4f} ± {ht['raw'][1]:.4f}", "arrival times only", delta_color="off")
+    c2.metric("After removing the Galaxy's pull", f"{ht['gal'][0]:.4f} ± {ht['gal'][1]:.4f}", "this step needs a distance", delta_color="off")
+    c3.metric("Double pulsar: light delay / predicted", f"{R.DOUBLE_PULSAR_S[0]:.5f} ± {R.DOUBLE_PULSAR_S[1]:.5f}", "Kramer et al. 2006", delta_color="off")
+    st.markdown(f"""
+The raw Hulse–Taylor register sits **{(ht['raw'][0] - 1) * 100:.2f}%** above the ideal, about
+{(ht['raw'][0] - 1) / ht['raw'][1]:.0f} times its error. That offset is not in the pulsar's gravity. It is the pulsar and the
+Sun being pulled differently by the Galaxy, plus the pulsar's sideways drift. Removing it needs a distance (a calculation),
+and once removed Q sits at 1. So the measurement-only register sees exactly what the *No fixed point* page says it
+should: the part that disagrees is relative motion.
+""")
+    st.caption("Masses come out as times (the Sun's mass is 4.93 µs in these units) and cancel in every ratio. "
+               f"From the turn and the clock term: {ht['m1']:.3f} and {ht['m2']:.3f} solar masses. The only π is 2π per orbit, "
+               "which turns one orbit into radians: a unit, not a limit.")
+
+    st.header("What this says about a mechanism")
+    st.markdown("""
+- The light and matter registers are **not independent** in any system where both are read. Their ratio sits at Q = 1 to
+  7% (S2), 0.2% (Hulse–Taylor) and 0.05% (double pulsar).
+- So gravity is not the **difference** between them. It is one departure from the ideal that shows up in both, with the
+  light register as the square of the matter one.
+- A mechanism has to produce both from one cause. The clock rate (the light register) is the natural candidate, with the
+  motion of matter following from how the clock rate changes from place to place.
+""")
+    st.dataframe(df.style.format({"Q": "{:.5f}", "err": "{:.5f}"}), hide_index=True, width="stretch")
+
+
 def page_motion():
     st.title("No fixed point: relative motion")
     st.markdown("""
@@ -813,6 +894,7 @@ PAGES = {
     "Cusp": page_cusp,
     "Rotation": page_rotation,
     "Clock & deflection": page_single,
+    "Light and matter together": page_light_matter,
     "No fixed point": page_motion,
     "Sources": sources.page,
 }
