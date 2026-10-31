@@ -241,7 +241,7 @@ def page_overview():
                                  hovertemplate=f"{r.system}<br>Q = {r.Q:.5g} ± {r.err:.2g}<extra></extra>"))
     fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=2))
     mini_chart(fig, "light register ÷ matter register", "", ideal=None)
-    fig.update_yaxes(autorange="reversed", tickfont=dict(size=10))
+    fig.update_yaxes(type="category", autorange="reversed", tickfont=dict(size=10))
     cards.append(("Light and matter together", fig, "Where both registers are read on one object (S2, binary pulsars) they agree; "
                   "the raw Hulse–Taylor offset is the Galaxy's pull."))
 
@@ -702,7 +702,7 @@ matter swing.** One cause sets both.
     fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="ideal, Q = 1",
                   annotation_position="top")
     base_layout(fig, "Q (light register against matter register)", "", height=420)
-    fig.update_yaxes(autorange="reversed")
+    fig.update_yaxes(type="category", autorange="reversed")
     st.plotly_chart(fig, width="stretch")
 
     st.header("1. S2 at the centre of the Galaxy")
