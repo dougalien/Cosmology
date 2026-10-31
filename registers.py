@@ -602,3 +602,96 @@ def dipole_register():
     beta = CMB_DIPOLE["dT_mK"] * 1e-3 / CMB_DIPOLE["T0_K"]
     return dict(Q=q, Q_e=s / d["D_expected"], beta=beta, v_kms=beta * C_KMS,
                 offset_deg=sky_angle(CMB_DIPOLE["l"], CMB_DIPOLE["b"], d["l"], d["b"]))
+
+
+# ----------------------------------------------------------------- light and matter in one system
+# The Sun's mass written as a time, G M_sun / c^3 (seconds). Masses below are in these units; every register
+# here is a ratio, so this unit cancels.
+T_SUN = 4.925490947e-6
+
+# S2 around the Galactic centre. f scales the extra redshift at closest approach (gravitational shift plus the
+# shift from sideways motion) against the value predicted from the orbit's own Doppler swing. f = 1 is the ideal.
+S2_REDSHIFT = [
+    # study, f, statistical error, systematic error
+    ("GRAVITY 2018 (VLT)", 0.90, 0.09, 0.15),
+    ("Keck, Do et al. 2019", 0.88, 0.17, 0.0),
+    ("GRAVITY 2019 (VLT, more 2018 data)", 0.97, 0.05, 0.05),
+]
+S2_ORBIT = dict(v_peri_kms=7650.0, e=0.88466)   # orbital speed at closest approach (Doppler swing plus sky track) and orbit shape (GRAVITY 2018)
+
+
+def s2_predicted_shift():
+    """Extra redshift at closest approach predicted from the swing alone (km/s): gravitational part, sideways-motion part.
+
+    For an orbit of eccentricity e, at closest approach the gravitational shift is beta^2/(1+e) and the sideways
+    (transverse Doppler) shift is beta^2/2, where beta is the orbital swing as a fraction of c. Both are frequency ratios.
+    """
+    b = S2_ORBIT["v_peri_kms"] / C_KMS
+    grav = b * b / (1 + S2_ORBIT["e"]) * C_KMS
+    side = b * b / 2 * C_KMS
+    return grav, side
+
+
+def s2_register():
+    """f for each study with its combined error."""
+    return [(s, f, float(np.hypot(a, b))) for s, f, a, b in S2_REDSHIFT]
+
+
+# Hulse-Taylor binary pulsar PSR B1913+16, timing only (Weisberg & Huang 2016, Table 2).
+HULSE_TAYLOR = dict(
+    Pb_d=0.322997448918,            # orbital period (days)
+    e=0.6171340,                    # orbit shape
+    wdot=4.226585, wdot_e=0.000004, # turn of the orbit (degrees per year): matter register
+    gamma_s=4.307e-3, gamma_e=0.004e-3,   # clock slowing and speeding around the orbit (s): light register
+    pbdot_obs=-2.423e-12, pbdot_obs_e=0.001e-12,      # measured shrinking of the period (s/s)
+    pbdot_gal=-2.398e-12, pbdot_gal_e=0.004e-12,      # after removing the Galaxy's pull, which needs a distance
+)
+
+
+def _pulsar_pk(Pb_d, e, wdot, gamma_s):
+    """Masses from the orbit's turn and the clock term, then the period shrink they predict.
+
+    The only pi here is 2*pi/Pb, which turns one orbit into one full turn in radians: a unit, not a limit.
+    """
+    n = 2 * np.pi / (Pb_d * 86400.0)
+    wd = np.deg2rad(wdot) / (365.25 * 86400.0)
+    M = (wd * (1 - e ** 2) / (3 * n ** (5 / 3))) ** 1.5 / T_SUN
+    k = gamma_s / (e * n ** (-1 / 3) * T_SUN ** (2 / 3) * M ** (-4 / 3))
+    m2 = (-M + np.sqrt(M * M + 4 * k)) / 2
+    m1 = M - m2
+    fe = (1 + 73 / 24 * e ** 2 + 37 / 96 * e ** 4) / (1 - e ** 2) ** 3.5
+    pbdot = -192 * np.pi / 5 * n ** (5 / 3) * fe * T_SUN ** (5 / 3) * m1 * m2 * M ** (-1 / 3)
+    return M, m1, m2, pbdot
+
+
+def hulse_taylor_register(n_draws=20000, seed=1):
+    """Q = measured period shrink / shrink predicted from the turn and the clock term. Errors by resampling."""
+    p = HULSE_TAYLOR
+    M, m1, m2, pred = _pulsar_pk(p["Pb_d"], p["e"], p["wdot"], p["gamma_s"])
+    rng = np.random.default_rng(seed)
+    _, _, _, draws = _pulsar_pk(p["Pb_d"], p["e"], p["wdot"] + p["wdot_e"] * rng.standard_normal(n_draws),
+                                p["gamma_s"] + p["gamma_e"] * rng.standard_normal(n_draws))
+    out = {}
+    for key, obs, oe in [("raw", p["pbdot_obs"], p["pbdot_obs_e"]), ("gal", p["pbdot_gal"], p["pbdot_gal_e"])]:
+        q = obs / draws
+        out[key] = (float(obs / pred), float(np.hypot(q.std(), oe / abs(obs))))
+    return dict(m1=float(m1), m2=float(m2), pbdot_pred=float(pred), **out)
+
+
+# Double pulsar PSR J0737-3039A/B (Kramer et al. 2006): the delay as light passes the companion, against the value
+# predicted from the orbit's turn and the two pulsars' orbit sizes.
+DOUBLE_PULSAR_S = (0.99987, 0.00050)
+
+
+def light_matter_table():
+    """One row per system: register, Q, error, what it compares."""
+    ht = hulse_taylor_register()
+    rows = [dict(system=s, register="S2 extra redshift / swing²", Q=f, err=e, compares="light shift against orbital swing")
+            for s, f, e in s2_register()]
+    rows.append(dict(system="Hulse-Taylor pulsar (raw)", register="period shrink / predicted", Q=ht["raw"][0], err=ht["raw"][1],
+                     compares="clock term and orbit turn against orbit shrink"))
+    rows.append(dict(system="Hulse-Taylor pulsar (Galaxy's pull removed)", register="period shrink / predicted", Q=ht["gal"][0],
+                     err=ht["gal"][1], compares="same, after a distance-based correction"))
+    rows.append(dict(system="Double pulsar", register="light delay shape / predicted", Q=DOUBLE_PULSAR_S[0], err=DOUBLE_PULSAR_S[1],
+                     compares="light passing the companion against orbit turn and sizes"))
+    return rows
