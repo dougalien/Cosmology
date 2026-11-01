@@ -122,6 +122,7 @@ measured from here.
         ["Clock", "Clocks at measured g", "frequency shift matching local g", "single value", "Pound–Rebka, lattice clocks"],
         ["Deflection", "Light passing the Sun", "light bends as matter does", "single value", "VLBI, Cassini"],
         ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
+        ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), hide_index=True, width="stretch")
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
@@ -244,6 +245,22 @@ def page_overview():
     fig.update_yaxes(type="category", autorange="reversed", tickfont=dict(size=10))
     cards.append(("Light and matter together", fig, "Where both registers are read on one object (S2, binary pulsars) they agree; "
                   "the raw Hulse–Taylor offset is the Galaxy's pull."))
+
+    # Gravity: departure from G
+    gq, ggb, _, _ = R.gravity_galaxies()
+    gx, gy, glo, ghi, _ = R.gravity_readings(ggb, gq)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=np.r_[gx, gx[::-1]], y=np.r_[ghi, glo[::-1]], fill="toself", fillcolor=PALETTE[0], opacity=0.18,
+                             line_width=0, hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=gx, y=gy, mode="lines+markers", line=dict(color=BLACK, width=2), marker=dict(size=6)))
+    comp = R.gravity_compact()
+    fig.add_trace(go.Scatter(x=[c[1] for c in comp], y=[c[2] for c in comp], mode="markers", text=[c[0] for c in comp],
+                             marker=dict(size=9, color=PALETTE[1], symbol="diamond"), hovertemplate="%{text}<extra></extra>"))
+    mini_chart(fig, "pull from own matter (m/s²)", "Q_G", xticks=[1e-12, 1e-9, 1e-6, 1e-3, 1, 1000], yticks=[1, 2, 5, 10],
+               xlog=True, ylog=True, ideal_label="one G everywhere")
+    fig.update_xaxes(ticktext=["10⁻¹²", "10⁻⁹", "10⁻⁶", "10⁻³", "1", "10³"])
+    cards.append(("Gravity: departure from G", fig, "One G holds from neutron-star binaries to the planets; in thin galaxy "
+                  "outskirts the pull grows to several times what the visible matter gives."))
 
     for i in range(0, len(cards), 2):
         cols = st.columns(2)
@@ -748,6 +765,75 @@ should: the part that disagrees is relative motion.
     st.dataframe(df.style.format({"Q": "{:.5f}", "err": "{:.5f}"}), hide_index=True, width="stretch")
 
 
+def page_gravity():
+    st.title("Gravity: departure from G")
+    st.markdown("""
+FDG uses ideals for comparison, not constants. Here the ideal is **one G everywhere**: the pull a system shows equals
+the pull its own matter gives with the G measured in the lab. The register is **Q_G = pull shown ÷ pull from its own
+matter**, so Q_G = 1 means the one-G ideal holds there. Systems are read against the pull of their matter, from
+neutron-star binaries down to the thin outer edges of galaxies.
+""")
+    ud = st.sidebar.slider("Disk mass-to-light ratio (galaxies)", 0.2, 1.0, 0.5, 0.05)
+    ub = st.sidebar.slider("Bulge mass-to-light ratio (galaxies)", 0.3, 1.2, 0.7, 0.05)
+    q, gb, names, ng = R.gravity_galaxies(ud, ub)
+    x, y, lo, hi, rd = R.gravity_readings(gb, q)
+    comp = R.gravity_compact()
+
+    fig = go.Figure()
+    fig.add_trace(go.Scattergl(x=gb, y=q, mode="markers", marker=dict(size=3, color="#9AA5AB", opacity=0.45),
+                               name=f"galaxies, each radius ({ng} galaxies)", text=names,
+                               hovertemplate="%{text}<br>pull from matter %{x:.2e} m/s²<br>Q_G=%{y:.2f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=y, mode="lines+markers", line=dict(color=BLACK, width=2.5), name="galaxies, median (16–84%)",
+                             error_y=dict(type="data", symmetric=False, array=hi - y, arrayminus=y - lo)))
+    groups = {}
+    for name, g, qq, e, grp in comp:
+        groups.setdefault(grp, []).append((name, g, qq, e))
+    symbols = {"Solar System": "circle", "Binary pulsars": "diamond", "Galactic centre": "star"}
+    for i, (grp, rows) in enumerate(groups.items()):
+        fig.add_trace(go.Scatter(x=[r[1] for r in rows], y=[r[2] for r in rows], mode="markers", name=grp,
+                                 marker=dict(size=12, color=PALETTE[i], symbol=symbols.get(grp, "circle"), line=dict(color="white", width=1)),
+                                 error_y=dict(type="data", array=[r[3] for r in rows], visible=True), text=[r[0] for r in rows],
+                                 hovertemplate="%{text}<br>pull %{x:.2e} m/s²<br>Q_G=%{y:.5f}<extra></extra>"))
+    # on log axes, annotations are placed in log10 units
+    fig.add_hline(opacity=1, y=1.0, line=dict(color=REF, dash="dash", width=1.5))
+    fig.add_annotation(text="one G everywhere, Q_G = 1", xref="paper", x=1, xanchor="right", y=0, yanchor="bottom",
+                       showarrow=False, font=dict(color=REF, size=12))
+    for k, (level, dash) in enumerate(((1.5, "dot"), (2.0, "dash"))):
+        if level in rd:
+            fig.add_vline(opacity=1, x=rd[level], line=dict(color=brand.RUST, dash=dash, width=1.2))
+            fig.add_annotation(text=f"Q_G = {level:g}", x=np.log10(rd[level]), xanchor="left", yref="paper", y=1 - 0.05 * k,
+                               showarrow=False, font=dict(color=brand.RUST, size=12))
+    base_layout(fig, "pull from the system's own matter (m/s²)", "Q_G = pull shown ÷ pull from its own matter",
+                xlog=True, ylog=True, height=600)
+    fig.update_xaxes(range=[-12.7, 3.2])
+    fig.update_yaxes(range=[np.log10(0.6), np.log10(25)])
+    st.plotly_chart(fig, width="stretch")
+
+    st.subheader("Readings")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Q_G reaches 1.5 at a pull of", f"{rd.get(1.5, float('nan')):.1e} m/s²", "a reading, not an input", delta_color="off")
+    c2.metric("Q_G reaches 2 at a pull of", f"{rd.get(2.0, float('nan')):.1e} m/s²", "a reading, not an input", delta_color="off")
+    c3.metric("Slope in the thinnest matter", f"{rd['slope']:.2f}", "log Q_G per log pull, below 10⁻¹¹ m/s²", delta_color="off")
+    st.markdown(f"""
+- From neutron-star binaries to the outer Solar System, about **eleven decades of pull**, Q_G stays at 1 to between
+  1 part in 1,000 and 1 part in 100,000.
+- In galaxies Q_G stays near 1 while the matter is dense, then leaves 1 as the matter thins. It reaches 2 at a
+  pull of about {rd.get(2.0, float('nan')):.0e} m/s² and keeps rising. Where it leaves 1 is a reading of this register, the
+  same kind of reading as the exponent in the redshift registers.
+- Gravity is therefore not one fixed G at every scale. It holds the ideal where matter is concentrated and departs
+  from it where matter is thin.
+""")
+    st.dataframe(pd.DataFrame([dict(system=n, pull_m_s2=g, Q_G=qq, error=e, group=grp) for n, g, qq, e, grp in comp])
+                 .style.format({"pull_m_s2": "{:.2e}", "Q_G": "{:.5f}", "error": "{:.1e}"}), hide_index=True, width="stretch")
+    st.caption("Compact systems: each Q is the published ratio of a measured effect to its one-G prediction, with the mass "
+               "taken from the same system's orbits. Their pulls use radar distances in the Solar System and orbit sizes "
+               "from timing; S2's uses the distance to the Galactic centre. Galaxies: rotation is a Doppler shift, and the pull "
+               "from visible matter comes from light and gas with the mass-to-light ratios set in the sidebar. The catalog "
+               "distance cancels out of that pull but still scales Q_G, so the galaxy points carry the catalog distance and the "
+               "mass-to-light ratio as their calculated parts. The ideal itself is uncertain: lab measurements of G disagree "
+               "by several parts in 10,000.")
+
+
 def page_motion():
     st.title("No fixed point: relative motion")
     st.markdown("""
@@ -895,6 +981,7 @@ PAGES = {
     "Rotation": page_rotation,
     "Clock & deflection": page_single,
     "Light and matter together": page_light_matter,
+    "Gravity: departure from G": page_gravity,
     "No fixed point": page_motion,
     "Sources": sources.page,
 }
