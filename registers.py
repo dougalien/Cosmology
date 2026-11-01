@@ -895,3 +895,96 @@ def mass_budget():
     out.append(("NGC 3198", "assumed: tilt from a circular outline", np.sqrt(hi / lo)))
     out.append(("NGC 3198", "assumed: distance", np.sqrt((gx["D"] + gx["eD"]) / (gx["D"] - gx["eD"]))))
     return out
+
+
+# ----------------------------------------------------------------- light speed: departure from the vacuum limit
+# Q_c = measured speed of light (a signal) / the vacuum limit. The limit is an ideal: since 1983 the SI metre is
+# defined from it, so 299,792,458 m/s is exact by choice of unit and is no longer measured. What can be measured is
+# how far real light falls short of it. Every row gives the departure 1 - Q_c.
+C_MS = C_KMS * 1e3
+GM_EARTH = 3.986004418e14       # m^3/s^2, from satellite orbits (WGS 84)
+R_EARTH = 6.371e6               # m, mean radius
+PC_CM = 3.0857e18
+DM_DELAY_S = 4.148808e-3        # s per (pc cm^-3) at 1 GHz: the measured lag of a radio pulse goes as DM / f^2
+
+
+def plasma_departure(n_e_cm3, f_ghz):
+    """1 - Q_c for a radio signal (group speed) in an ionized gas of electron density n_e, at frequency f.
+
+    The plasma frequency is 8.98 kHz x sqrt(n_e); a signal at f travels at c (1 - f_p^2 / 2 f^2).
+    """
+    fp = 8978.66 * np.sqrt(n_e_cm3)
+    return 0.5 * (fp / (f_ghz * 1e9)) ** 2
+
+
+# Matter: n is read from refraction angles (Snell), so Q_c = 1/n needs no distance or time.
+LIGHT_MEDIA = [
+    ("Air (0 °C, sea-level pressure)", 1.000293),
+    ("Water (20 °C)", 1.3330),
+    ("Crown glass (BK7)", 1.5168),
+    ("Diamond", 2.4175),
+]
+SLOW_LIGHT_MS = 17.0            # Hau et al. 1999, cold sodium atoms
+
+# Plasma: (name, electron density in cm^-3, how the density is read)
+PLASMAS = [
+    ("Ionosphere, densest layer (daytime)", 1.0e6, "radio sounding of the layer's reflecting frequency"),
+    ("Solar wind at Earth's orbit", 5.0, "spacecraft counting electrons in place (varies 1–20)"),
+    ("Gas toward PSR J0437−4715", 2.6433 / 156.79, "pulse lag (DM 2.64) ÷ parallax distance 157 pc"),
+    ("Gas toward the Crab pulsar", 56.77 / 2000.0, "pulse lag (DM 56.8) ÷ distance ~2 kpc"),
+]
+
+# Measured c before the 1983 definition, km/s: (year, who, value, error or None)
+C_HISTORY = [
+    (1676, "Rømer / Huygens (Jupiter's moons)", 220000.0, None),
+    (1849, "Fizeau (toothed wheel)", 315000.0, None),
+    (1862, "Foucault (rotating mirror)", 298000.0, 500.0),
+    (1879, "Michelson (rotating mirror)", 299910.0, 50.0),
+    (1926, "Michelson (Mount Wilson)", 299796.0, 4.0),
+    (1950, "Essen (cavity resonator)", 299792.5, 1.0),
+    (1958, "Froome (microwave interferometer)", 299792.50, 0.10),
+    (1972, "Evenson et al. (laser frequency × wavelength)", 299792.4562, 0.0011),
+]
+
+
+def light_speed_table(f_ghz=1.0):
+    """Every reading as a dict: departure 1 - Q_c, Q_c, kind, what is measured and what is added."""
+    rows = []
+    for name, n in LIGHT_MEDIA:
+        rows.append(dict(reading=name, group="Matter", kind="measured", departure=1 - 1 / n, Q_c=1 / n,
+                         measured="refraction angle (n)", added="none"))
+    rows.append(dict(reading="Cold sodium atoms (slow light)", group="Matter", kind="measured",
+                     departure=1 - SLOW_LIGHT_MS / C_MS, Q_c=SLOW_LIGHT_MS / C_MS,
+                     measured="pulse delay through a 0.2 mm cloud", added="cloud length"))
+    for name, ne, how in PLASMAS:
+        d = plasma_departure(ne, f_ghz)
+        rows.append(dict(reading=f"{name}, {f_ghz:g} GHz", group="Plasma", kind="measured", departure=d, Q_c=1 - d,
+                         measured="arrival time against radio frequency", added=how))
+    for name, gm, r in [("Sun's edge", GM_SUN, R_SUN), ("Closest Cassini path (1.6 solar radii)", GM_SUN, 1.6 * R_SUN),
+                        ("Earth's orbit, from the Sun", GM_SUN, AU_M), ("Earth's surface", GM_EARTH, R_EARTH)]:
+        d = 2 * gm / (r * C_MS ** 2)
+        rows.append(dict(reading=name, group="Near mass", kind="measured" if "Cassini" in name else "calculated",
+                         departure=d, Q_c=1 - d, measured="extra light delay (Cassini, radar echoes)",
+                         added="a path to spread the delay over" if "Cassini" in name
+                         else "the delay's form, tested by Cassini to 1 part in 10⁵, applied here"))
+    rows.append(dict(reading="Gravity vs light, GW170817", group="Vacuum tests", kind="upper limit", departure=3e-15, Q_c=np.nan,
+                     measured="1.7 s between gravitational-wave and gamma-ray arrival", added="travel time from a distance (~40 Mpc)"))
+    rows.append(dict(reading="Gamma-ray colours, GRB 090510", group="Vacuum tests", kind="upper limit", departure=2e-18, Q_c=np.nan,
+                     measured="< 1 s between low- and 31 GeV photons", added="travel time from redshift"))
+    rows.append(dict(reading="Space between galaxies (mean gas)", group="Calculated", kind="calculated",
+                     departure=plasma_departure(2.2e-7, f_ghz), Q_c=1 - plasma_departure(2.2e-7, f_ghz),
+                     measured="none directly", added=f"an assumed mean density, 2×10⁻⁷ electrons/cm³, at {f_ghz:g} GHz"))
+    rows.append(dict(reading="Best lab vacuum (10⁻¹⁰ Pa)", group="Calculated", kind="calculated",
+                     departure=2.93e-4 * 1e-10 / 101325, Q_c=1 - 2.93e-4 * 1e-10 / 101325,
+                     measured="gauge pressure", added="air's n scaled down to that pressure"))
+    return rows
+
+
+def silica_index(lam_um):
+    """Fused silica: phase index n and group index n_g (Malitson 1965 Sellmeier fit), lam in micrometres."""
+    B = (0.6961663, 0.4079426, 0.8974794)
+    C = (0.0684043, 0.1162414, 9.896161)
+    l2 = lam_um ** 2
+    n = np.sqrt(1 + sum(b * l2 / (l2 - c ** 2) for b, c in zip(B, C)))
+    dn = np.gradient(n, lam_um)
+    return n, n - lam_um * dn
