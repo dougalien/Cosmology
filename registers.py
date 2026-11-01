@@ -695,3 +695,63 @@ def light_matter_table():
     rows.append(dict(system="Double pulsar", register="light delay shape / predicted", Q=DOUBLE_PULSAR_S[0], err=DOUBLE_PULSAR_S[1],
                      compares="light passing the companion against orbit turn and sizes"))
     return rows
+
+
+# ----------------------------------------------------------------- gravity register: departure from G
+# Q_G = the pull a system shows / the pull its own matter gives with the one G measured in the lab.
+# The ideal is one G everywhere. x is the pull from the matter alone (m/s^2). In galaxies that number is built
+# from light and gas with an assumed mass-to-light ratio, and the catalog distance cancels out of it.
+GM_SUN = T_SUN * (C_KMS * 1e3) ** 3          # m^3/s^2, from the planets' orbits
+R_SUN = 6.957e8                               # m
+AU_M = 1.495978707e11                         # m (radar)
+
+
+def _pulsar_pull(Pb_d, M_sun_units):
+    """Pull at the orbit of a binary pulsar from its period and total mass (Kepler's third law)."""
+    GM = GM_SUN * M_sun_units
+    Pb = Pb_d * 86400.0
+    a = (GM * (Pb / (2 * np.pi)) ** 2) ** (1 / 3)
+    return GM / a ** 2
+
+
+def gravity_compact():
+    """Systems where both sides are weighed by gravity itself: Q_G = 1 means one G holds there."""
+    ht = hulse_taylor_register()
+    g_sun = lambda r_m: GM_SUN / r_m ** 2
+    rows = [
+        ("Cassini light delay, 1.6 solar radii", g_sun(1.6 * R_SUN), 1 + 1.05e-5, 1.15e-5, "Solar System"),
+        ("Radio light bending, 6–56 solar radii", g_sun(17.7 * R_SUN), 0.99992, 0.000075, "Solar System"),
+        ("Mercury's orbit turning", g_sun(0.387 * AU_M), 1.000023, 0.000020, "Solar System"),
+        ("Starlight bending (Hipparcos), ~1 AU", g_sun(0.86 * AU_M), 0.9985, 0.0015, "Solar System"),
+        ("Hulse–Taylor pulsar (Galaxy's pull removed)", _pulsar_pull(HULSE_TAYLOR["Pb_d"], ht["m1"] + ht["m2"]),
+         ht["gal"][0], ht["gal"][1], "Binary pulsars"),
+        ("Double pulsar", _pulsar_pull(0.10225156248, 1.3381 + 1.2489), DOUBLE_PULSAR_S[0], DOUBLE_PULSAR_S[1], "Binary pulsars"),
+        ("S2 at closest approach (Galactic centre)", 4.30e6 * GM_SUN / (119.5 * AU_M) ** 2, S2_REDSHIFT[-1][1],
+         float(np.hypot(*S2_REDSHIFT[-1][2:])), "Galactic centre"),
+    ]
+    return rows
+
+
+def gravity_galaxies(ud=0.5, ub=0.7, min_inc=30, max_quality=2):
+    """Q_G at every radius of every SPARC galaxy, against the pull of its visible matter."""
+    q, gb, fd, names, ng, rr = rotation(ud, ub, min_inc, max_quality)
+    return q, gb, names, ng
+
+
+def gravity_readings(gb, q, edges=np.logspace(-12.5, -8.5, 17)):
+    """Where the binned median of Q_G crosses 1.5 and 2, and its slope in the thinnest matter.
+
+    These are readings of the register, not constants put in.
+    """
+    x, y, lo, hi = binned_median_x(gb, q, edges)
+    lx, ly = np.log10(x), np.log10(y)
+    out = {}
+    for level in (1.5, 2.0):
+        i = np.where((ly[:-1] - np.log10(level)) * (ly[1:] - np.log10(level)) <= 0)[0]
+        if len(i):
+            j = i[-1]
+            f = (np.log10(level) - ly[j]) / (ly[j + 1] - ly[j])
+            out[level] = float(10 ** (lx[j] + f * (lx[j + 1] - lx[j])))
+    thin = gb < 1e-11
+    out["slope"] = float(np.polyfit(np.log10(gb[thin]), np.log10(q[thin]), 1)[0])
+    return x, y, lo, hi, out

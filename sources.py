@@ -77,6 +77,16 @@ SOURCES = [
         ("Kramer, M., et al. (2006). Tests of general relativity from timing the double pulsar. *Science*, 314, 97–102. s_obs/s_pred = 0.99987 ± 0.00050.",
          "https://arxiv.org/abs/astro-ph/0609417"),
     ]),
+    ("Gravity: departure from G", [
+        ("Compact systems reuse the Light and matter together and solar-system sources: Bertotti et al. (2003) Cassini; Lambert & Le Poncin-Lafitte (2009) VLBI; Froeschl\u00e9, Mignard & Arenou (1997) Hipparcos; Park et al. (2017) MESSENGER; Weisberg & Huang (2016); Kramer et al. (2006); GRAVITY (2018, 2019).", None),
+        ("Park, R. S., et al. (2017). Precession of Mercury's perihelion from ranging to the MESSENGER spacecraft. *The Astronomical Journal*, 153, 121. \u03b2 \u2212 1 = (\u22122.7 \u00b1 3.9) \u00d7 10\u207b\u2075.",
+         "https://doi.org/10.3847/1538-3881/aa5be2"),
+        ("Lambert, S. B., & Le Poncin-Lafitte, C. (2009). Determining the relativistic parameter \u03b3 using very long baseline interferometry. *Astronomy & Astrophysics*, 499, 331. \u03b3 = 0.99984 \u00b1 0.00015.",
+         "https://arxiv.org/abs/0903.1615"),
+        ("Bertotti, B., Iess, L., & Tortora, P. (2003). Cassini radio links (also under Clock and deflection). \u03b3 \u2212 1 = (2.1 \u00b1 2.3) \u00d7 10\u207b\u2075.",
+         "https://doi.org/10.1038/nature01997"),
+        ("Galaxies: SPARC (Lelli, McGaugh & Schombert 2016), as on the Galaxy rotation page.", None),
+    ]),
     ("No fixed point (relative motion)", [
         ("Planck Collaboration (2020). Planck 2018 results. I. *Astronomy & Astrophysics*, 641, A1. Table 2: the CMB dipole, 3362.08 µK toward (l, b) = (264.021°, 48.253°).",
          "https://doi.org/10.1051/0004-6361/201833880"),
