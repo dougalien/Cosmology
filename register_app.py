@@ -123,6 +123,7 @@ measured from here.
         ["Deflection", "Light passing the Sun", "light bends as matter does", "single value", "VLBI, Cassini"],
         ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
         ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
+        ["Mass: a reading", "Sgr A*, M87*, NGC 5548, disk galaxies", "measured part only (no assumptions)", "each assumption in turn", "GRAVITY, EHT, reverberation, SPARC"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), hide_index=True, width="stretch")
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
@@ -834,6 +835,171 @@ neutron-star binaries down to the thin outer edges of galaxies.
                "by several parts in 10,000.")
 
 
+def page_mass():
+    st.title("Mass: a reading, not a measurement")
+    st.markdown("""
+No instrument reads a mass. What is measured is always an **angle**, a **time**, a **frequency shift** or a **flux**.
+A mass comes from multiplying that measured part by **assumed parts**: a distance, an ideal shape (a perfect ellipse,
+a perfect circle, a disk seen at a tilt), a steady state, and a calibration borrowed from other objects. This page keeps
+the two apart. Every slider is an assumption; the measured part never moves.
+
+Even for the Sun the reading is **G·M**, known to about ten digits from the planets' orbits. Turning it into kilograms
+needs G, and lab measurements of G disagree by several parts in 10,000. So every mass below is given as a **ratio to
+the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant.
+""")
+    budget = R.mass_budget()
+    st.header("How much of each mass is measured")
+    fig = go.Figure()
+    colors = {"measured": "#2E7D6B", "assumed": brand.RUST, "changes": "#7A5195"}
+    labels = [f"{o} · {what}" for o, what, _ in budget]
+    for kind, col in colors.items():
+        sel = [(lab, (f - 1) * 100) for (o, what, f), lab in zip(budget, labels) if what.startswith(kind)]
+        if sel:
+            fig.add_trace(go.Bar(x=[v for _, v in sel], y=[l for l, _ in sel], orientation="h", name=kind, marker_color=col,
+                                 hovertemplate="%{y}<br>± %{x:.3g}%<extra></extra>"))
+    base_layout(fig, "spread it puts on the mass (± %, log scale)", "", xlog=True, height=560)
+    fig.update_xaxes(tickvals=[1e-8, 1e-6, 1e-4, 1e-2, 1, 100],
+                     ticktext=["0.00000001%", "0.000001%", "0.0001%", "0.01%", "1%", "100%"])
+    fig.update_yaxes(type="category", categoryorder="array", categoryarray=labels[::-1])
+    fig.update_layout(barmode="overlay")
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Measured: the published error on the angles, times and Doppler shifts. Assumed: half the range between the "
+               "lowest and highest values in use (distances from different teams, shape factors, calibrations, lab G). "
+               "Changes: the same measurement repeated in different years.")
+    st.markdown("""
+- The **measured part is the small part** everywhere except the Sun. For Sgr A* the angles and period are good to 0.1%;
+  the distance, which goes in cubed, adds six times more.
+- For M87* and quasars the biggest spread is **which recipe** or **which calibration** is chosen, not the data.
+- In NGC 5548 the measurement itself **changes**: the lag is different every year, so a single mass is an average over
+  a system that never holds still.
+""")
+
+    st.header("How much of the motion has been watched")
+    cyc = R.cycles_seen()
+    fig = go.Figure(go.Bar(x=[c[1] for c in cyc], y=[c[0] for c in cyc], orientation="h", marker_color=BLACK,
+                           hovertemplate="%{y}<br>%{x:.2g} of one orbit<extra></extra>"))
+    fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="one full orbit",
+                  annotation_position="top")
+    base_layout(fig, "fraction of one full orbit watched (log scale)", "", xlog=True, height=360)
+    fig.update_yaxes(type="category", autorange="reversed")
+    st.plotly_chart(fig, width="stretch")
+    st.caption("A mass from orbits assumes the orbit closes and repeats. Only around the Sun and Sgr A* has a whole orbit "
+               "been seen. For a galaxy's outer disk we have watched about one twenty-millionth of a turn: the rotation is "
+               "a snapshot, and steady circular motion is an assumption. The orbit times here are themselves calculations "
+               "from the same assumed masses and distances, so treat them as rough.")
+
+    st.header("1. Sgr A*: angles and a period")
+    th3p2, e = R.sgr_a_measured_part()
+    d = st.slider("Assumed distance to the Galactic centre (pc)", 7800, 8400, 8178, 1)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Measured: angle³ / period² (arcsec³/yr²)", f"{th3p2:.4e}", f"± {e * 100:.2f}%", delta_color="off")
+    c2.metric("Assumed: distance³ (pc³)", f"{d ** 3:.3e}", "AU per arcsec is the distance in pc", delta_color="off")
+    c3.metric("Reading (million Suns)", f"{R.mass_sgr_a(d) / 1e6:.3f}", "G cancels in Sun units", delta_color="off")
+    ds = np.linspace(7800, 8400, 61)
+    fig = go.Figure(go.Scatter(x=ds, y=R.mass_sgr_a(ds) / 1e6, mode="lines", line=dict(color=BLACK, width=2),
+                               name="same angles and period, any distance"))
+    fig.add_trace(go.Scatter(x=[x for _, x in R.GC_DISTANCES], y=[R.mass_sgr_a(x) / 1e6 for _, x in R.GC_DISTANCES],
+                             mode="markers+text", text=[n for n, _ in R.GC_DISTANCES], textposition="top left",
+                             marker=dict(size=10, color=brand.RUST), name="distances in use"))
+    base_layout(fig, "assumed distance (pc)", "mass (million Suns)", height=400)
+    st.plotly_chart(fig, width="stretch")
+    st.caption("The angle and period come from GRAVITY (2020). Teams fit the distance from the same orbit by matching the "
+               "Doppler speed (km/s) to the motion across the sky (mas/yr), which assumes the orbit is a perfect closed "
+               "ellipse around a point. The mass goes as the cube of that distance.")
+
+    st.header("2. M87*: one ring angle")
+    c1, c2 = st.columns(2)
+    alpha = c1.slider("Assumed ring-to-mass shape factor", 9.5, 12.5, 11.0, 0.1,
+                      help="Ring diameter in units of GM/(D c²). A perfect circular shadow of a non-spinning hole gives 10.39.")
+    dm = c2.slider("Assumed distance to M87 (Mpc)", 15.0, 18.5, 16.8, 0.1)
+    rows = []
+    for name, ring, er in R.M87_RING:
+        rows.append(dict(reading=f"{name}: {ring:.1f} ± {er:.1f} µas", mass_billion=R.mass_m87(ring, alpha, dm) / 1e9))
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Measured: ring diameter (2017)", "42 ± 3 µas", "2018: 43.3 µas, bright side turned ~30°", delta_color="off")
+    c2.metric("Reading with your assumptions (billion Suns)", f"{rows[0]['mass_billion']:.2f}", delta_color="off")
+    c3.metric("With the ideal circle, 10.39 (billion Suns)", f"{R.mass_m87(42.0, R.M87_ALPHA_IDEAL, dm) / 1e9:.2f}",
+              "the ideal is a comparison, not the answer", delta_color="off")
+    fig = go.Figure()
+    for i, (name, m, up, dn) in enumerate(R.M87_OTHER):
+        fig.add_trace(go.Scatter(x=[m / 1e9], y=[name], mode="markers", marker=dict(size=11, color=PALETTE[i]), showlegend=False,
+                                 error_x=dict(type="data", symmetric=False, array=[up / 1e9], arrayminus=[dn / 1e9])))
+    fig.add_vline(opacity=1, x=rows[0]["mass_billion"], line=dict(color=BLACK, dash="dot"), annotation_text="your reading",
+                  annotation_position="top")
+    base_layout(fig, "mass (billion Suns, at 16.8 Mpc)", "", height=320)
+    fig.update_yaxes(type="category")
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Same object, three recipes. Gas motions and star motions disagree by nearly a factor of two, each with "
+               "its own model of how the gas or stars move. The ring itself changed between 2017 and 2018.")
+
+    st.header("3. NGC 5548: a delay and a line width")
+    c1, c2 = st.columns(2)
+    lag = c1.slider("Lag in the year you pick (days)", float(R.NGC5548_LAG_D[0]), float(R.NGC5548_LAG_D[1]), 15.0, 0.1)
+    f = c2.select_slider("Assumed virial factor f", [v for _, v in R.VIRIAL_F], value=6.3,
+                         format_func=lambda v: f"{v} ({dict((b, a) for a, b in R.VIRIAL_F)[v]})")
+    m = R.mass_reverb(lag, R.NGC5548_WIDTH, f)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Measured: lag", f"{lag:.1f} days", f"has ranged {R.NGC5548_LAG_D[0]}–{R.NGC5548_LAG_D[1]} days", delta_color="off")
+    c2.metric("Measured: line width", f"{R.NGC5548_WIDTH:.0f} km/s", "Doppler spread, round value", delta_color="off")
+    c3.metric("Reading (10⁷ Suns)", f"{m / 1e7:.1f}", "lag × width² × f", delta_color="off")
+    lags = np.linspace(R.NGC5548_LAG_D[0], R.NGC5548_LAG_D[1], 50)
+    fig = go.Figure()
+    for i, (name, fv) in enumerate(R.VIRIAL_F):
+        fig.add_trace(go.Scatter(x=lags, y=R.mass_reverb(lags, R.NGC5548_WIDTH, fv) / 1e7, mode="lines",
+                                 line=dict(color=PALETTE[i], width=2), name=f"f = {fv} ({name})"))
+    fig.add_hrect(y0=(R.NGC5548_MEAN_MASS[0] - R.NGC5548_MEAN_MASS[1]) / 1e7, y1=(R.NGC5548_MEAN_MASS[0] + R.NGC5548_MEAN_MASS[1]) / 1e7,
+                  fillcolor="#9AA5AB", opacity=0.3, line_width=0, annotation_text="published mean over years (f = 6.3)",
+                  annotation_position="top left")
+    base_layout(fig, "lag (days)", "mass (10⁷ Suns)", height=420)
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Lags across campaigns from Lu et al. (2016, Table 4). When the lag grows the line narrows, which is why the "
+               "published mean holds steady: that steadiness is the virial assumption at work. f is never measured in NGC 5548; "
+               "it is borrowed from galaxies where a different mass recipe was used.")
+
+    st.header("4. A disk galaxy: a Doppler swing and an outline")
+    gal, _ = R.sparc_tables()
+    names = sorted(n for n, g in gal.items() if g["Q"] == 1 and g["inc"] >= 30)
+    name = st.selectbox("Galaxy (SPARC, quality 1)", names, index=names.index("NGC3198"))
+    gx = R.sparc_galaxy(name)
+    c1, c2, c3 = st.columns(3)
+    inc = c1.slider("Assumed tilt (degrees)", 30.0, 89.0, float(gx["inc"]), 0.5,
+                    help=f"Catalog: {gx['inc']:.0f} ± {gx['eInc']:.0f}°, from the outline read as a perfect circle seen at a tilt.")
+    dd = c2.slider("Assumed distance (Mpc)", max(0.5, gx["D"] * 0.6), gx["D"] * 1.4, float(gx["D"]), 0.1,
+                   help=f"Catalog: {gx['D']} ± {gx['eD']} Mpc")
+    ml = c3.slider("Assumed mass-to-light ratio (visible mass)", 0.2, 1.0, 0.5, 0.05)
+    gm = R.galaxy_mass(gx, inc, dd, ml)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Measured: line-of-sight swing", f"{gm['vlos']:.0f} km/s", "at the last measured radius", delta_color="off")
+    c2.metric("Mass from motion (Suns)", f"{gm['motion']:.2e}", f"v = {gm['v']:.0f} km/s, R = {gm['R_kpc']:.1f} kpc", delta_color="off")
+    c3.metric("Mass from light and gas (Suns)", f"{gm['visible']:.2e}", "goes as distance²", delta_color="off")
+    c4.metric("Motion ÷ visible", f"{gm['motion'] / gm['visible']:.1f}", "goes as 1 / distance", delta_color="off")
+    incs = np.linspace(max(30, gx["inc"] - 20), min(89, gx["inc"] + 15), 60)
+    ms = [R.galaxy_mass(gx, i, dd, ml)["motion"] for i in incs]
+    fig = go.Figure(go.Scatter(x=incs, y=ms, mode="lines",
+                               line=dict(color=BLACK, width=2), name="mass from motion"))
+    fig.add_vrect(x0=gx["inc"] - gx["eInc"], x1=gx["inc"] + gx["eInc"], fillcolor="#9AA5AB", opacity=0.3, line_width=0,
+                  annotation_text="catalog tilt ± error", annotation_position="top left")
+    fig.add_trace(go.Scatter(x=[incs[0], incs[-1]], y=[gm["visible"]] * 2, mode="lines", line=dict(color=brand.RUST, dash="dash", width=2),
+                             name="mass from light and gas (does not depend on tilt)"))
+    base_layout(fig, "assumed tilt (degrees)", "mass inside the last radius (Suns)", ylog=True, height=420)
+    fig.update_yaxes(range=[np.log10(min(min(ms), gm["visible"]) * 0.7), np.log10(max(max(ms), gm["visible"]) * 1.4)])
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Only the Doppler shift along the line of sight is measured. Rotation speed = swing ÷ sin(tilt), so the "
+               "tilt matters most for galaxies seen nearly face-on. Real disks are oval, warped and lopsided, so the "
+               "circle-seen-at-a-tilt is an ideal. The 'missing mass' ratio in the last metric changes with the assumed "
+               "distance and mass-to-light ratio, and the visible mass uses 1.33 × the hydrogen mass for gas.")
+
+    st.header("What this says")
+    st.markdown("""
+- A mass is a **reading assembled from measured ratios and chosen ideals**. The measured part is usually the small part
+  of the spread.
+- In solar units G cancels, so masses are **comparisons with the Sun**, not values against a constant.
+- The closer the object, and the more of its motion we have watched, the more the reading rests on measurement.
+  Sgr A* is the best case and still carries a distance cubed. A galaxy's mass rests on a snapshot of less than one
+  millionth of a turn, a tilt read from an ideal circle, and a distance.
+""")
+
+
 def page_motion():
     st.title("No fixed point: relative motion")
     st.markdown("""
@@ -982,6 +1148,7 @@ PAGES = {
     "Clock & deflection": page_single,
     "Light and matter together": page_light_matter,
     "Gravity: departure from G": page_gravity,
+    "Mass: a reading": page_mass,
     "No fixed point": page_motion,
     "Sources": sources.page,
 }

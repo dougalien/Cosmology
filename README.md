@@ -6,7 +6,7 @@ The geometry of the universe, read from measurements. A [Dougalien Systems](http
 
 **Live app:** https://doug-cosmology.streamlit.app/
 
-A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app lays published measurements side by side as registers: shape (solids, spheres, outlines, orbits, craters), flux dimming (Pantheon+ supernovae), time dilation, ageing rate (cosmic chronometers), the acoustic angle, cusp flux ratios, galaxy rotation (SPARC), single-value registers, light and matter read together on one object (S2 and binary pulsars), whether the redshift registers share one shape, and relative motion. Each page shows its data and sources.
+A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app lays published measurements side by side as registers: shape (solids, spheres, outlines, orbits, craters), flux dimming (Pantheon+ supernovae), time dilation, ageing rate (cosmic chronometers), the acoustic angle, cusp flux ratios, galaxy rotation (SPARC), single-value registers, light and matter read together on one object (S2 and binary pulsars), gravity as a departure from one G, mass as a reading built from measured angles, times and Doppler shifts plus assumed distances and shapes, whether the redshift registers share one shape, and relative motion. Each page shows its data and sources.
 
 ## Run it
 
