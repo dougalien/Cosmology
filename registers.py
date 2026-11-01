@@ -380,7 +380,8 @@ def sparc_tables():
     for ln in lines:
         p = ln.split()
         if len(p) >= 18:
-            gal[p[0]] = dict(D=float(p[2]), fD=int(p[4]), inc=float(p[5]), Rd=float(p[11]), Q=int(p[17]))
+            gal[p[0]] = dict(D=float(p[2]), eD=float(p[3]), fD=int(p[4]), inc=float(p[5]), eInc=float(p[6]), L36=float(p[7]),
+                              Rd=float(p[11]), MHI=float(p[13]), Q=int(p[17]))
     rows = []
     for ln in open(os.path.join(DATA, "MassModels_Lelli2016c.mrt")).read().splitlines():
         p = ln.split()
@@ -755,3 +756,142 @@ def gravity_readings(gb, q, edges=np.logspace(-12.5, -8.5, 17)):
     thin = gb < 1e-11
     out["slope"] = float(np.polyfit(np.log10(gb[thin]), np.log10(q[thin]), 1)[0])
     return x, y, lo, hi, out
+
+
+# ----------------------------------------------------------------- mass: a reading built from measurements and ideals
+# No mass here is read off an instrument. Each one is a measured part (angles, times, frequency shifts, fluxes)
+# multiplied by assumed parts (a distance, a shape, a calibration). Masses are in solar masses: every recipe divides by
+# the Sun's G*M, which the planets' orbits give to about ten digits, so G itself cancels. Only a mass in kilograms needs G.
+G_LAB = (6.67430e-11, 6.67191e-11, 6.67545e-11)  # CODATA 2018; lowest and highest single lab results (Rosi 2014, Quinn 2013)
+M_SUN_KG = GM_SUN / G_LAB[0]
+RG_SUN = GM_SUN / (C_KMS * 1e3) ** 2             # the Sun's mass written as a length, G M / c^2 (m)
+MPC_M = 3.0857e22
+DAY_S = 86400.0
+YEAR_S = 365.25 * DAY_S
+
+# S2 orbit (GRAVITY 2020, A&A 636, L5): angular half-size of the orbit on the sky and its period.
+S2_ANGLE_MAS = (125.058, 0.041)
+S2_PERIOD_YR = (16.0455, 0.0013)
+S2_FIRST_YEAR = 1992
+# Distance to the Galactic centre from different teams (pc). Each one is itself fit from the same orbits plus an ideal ellipse.
+GC_DISTANCES = [
+    ("Keck, Do et al. 2019", 7946.0),
+    ("Masers, Reid et al. 2019", 8150.0),
+    ("GRAVITY 2019", 8178.0),
+    ("GRAVITY 2020", 8246.7),
+    ("GRAVITY 2021", 8275.0),
+]
+
+
+def mass_sgr_a(d_pc):
+    """Kepler's ratio in Earth-orbit units: a^3 / P^2 with a = angle (arcsec) x distance (pc) in AU. Solar masses."""
+    th = S2_ANGLE_MAS[0] / 1000.0
+    return th ** 3 * d_pc ** 3 / S2_PERIOD_YR[0] ** 2
+
+
+def sgr_a_measured_part():
+    """The distance-free reading: angle^3 / period^2 (arcsec^3 / yr^2) and its fractional error."""
+    th, P = S2_ANGLE_MAS[0] / 1000.0, S2_PERIOD_YR[0]
+    err = np.hypot(3 * S2_ANGLE_MAS[1] / S2_ANGLE_MAS[0], 2 * S2_PERIOD_YR[1] / S2_PERIOD_YR[0])
+    return th ** 3 / P ** 2, float(err)
+
+
+# M87*: one ring angle (EHT 2019 Paper I/VI; 2018 campaign, EHT 2024). The ring is turned into a mass by a shape
+# factor alpha = ring diameter / (G M / D c^2). A perfect circular shadow of a non-spinning hole gives 2*sqrt(27) = 10.39;
+# EHT calibrated 11.0 from simulated images. Then a distance.
+M87_RING = [("EHT 2017", 42.0, 3.0), ("EHT 2018", 43.3, 2.3)]
+M87_ALPHA_IDEAL = 2 * np.sqrt(27.0)
+M87_ALPHA = (11.0, 10.0, 12.0)
+M87_D_MPC = (16.8, 16.0, 17.6)
+# Other recipes for the same object, rescaled to 16.8 Mpc (mass goes as distance for these methods).
+M87_OTHER = [
+    ("Gas motions (Walsh et al. 2013)", 3.5e9 * 16.8 / 17.9, 0.9e9 * 16.8 / 17.9, 0.7e9 * 16.8 / 17.9),
+    ("Star motions (Liepold et al. 2023)", 5.37e9, 0.37e9, 0.25e9),
+    ("Star motions (Gebhardt et al. 2011)", 6.6e9 * 16.8 / 17.9, 0.4e9 * 16.8 / 17.9, 0.4e9 * 16.8 / 17.9),
+    ("Ring angle (EHT 2019)", 6.5e9, 0.7e9, 0.7e9),
+]
+
+
+def mass_m87(ring_uas, alpha, d_mpc):
+    theta_g = ring_uas / alpha * np.pi / (180 * 3600e6)   # radians; the pi only converts degrees to radians
+    return theta_g * d_mpc * MPC_M / RG_SUN
+
+
+# Quasar-style reverberation, NGC 5548 (Lu et al. 2016, Table 4): the Hbeta lag in different years, and the virial factor f
+# that turns lag x width^2 into a mass. f is not measured in the object; it is calibrated on other galaxies.
+NGC5548_LAG_D = (4.17, 24.80)          # shortest and longest Hbeta lag across the campaigns (days)
+NGC5548_MEAN_MASS = (8.39e7, 0.72e7)   # mean over campaigns with f = 6.3
+NGC5548_WIDTH = 2100.0                 # km/s, a round line width that gives that mean mass with a 15-day lag and f = 6.3
+VIRIAL_F = [("Graham et al. 2011", 2.8), ("Grier et al. 2013", 4.3), ("Onken et al. 2004", 5.5), ("Ho & Kim 2014", 6.3)]
+
+
+def mass_reverb(lag_d, width_kms, f):
+    return f * (C_KMS * 1e3 * lag_d * DAY_S) * (width_kms * 1e3) ** 2 / GM_SUN
+
+
+def sparc_galaxy(name):
+    """Last measured radius of one SPARC galaxy: catalog distance, inclination, rotation and light."""
+    gal, rows = sparc_tables()
+    g = gal[name]
+    last = [r for r in rows if r[0] == name][-1]
+    return dict(name=name, D=g["D"], eD=g["eD"], inc=g["inc"], eInc=g["eInc"], L36=g["L36"], MHI=g["MHI"],
+                R_kpc=last[2], V=last[3], eV=last[4])
+
+
+def galaxy_mass(gx, inc, d_mpc, ml=0.5):
+    """Mass inside the last radius from motion, and the mass of the visible light and gas.
+
+    Measured: the line-of-sight Doppler swing v sin(i) and the angle R/D on the sky. Assumed: the tilt i (from the
+    outline, taken as a perfect circle seen at an angle), the distance, circular orbits in a steady state, and a
+    mass-to-light ratio. Light gives L ~ flux x D^2; motion gives M ~ v^2 x angle x D.
+    """
+    vlos = gx["V"] * np.sin(np.deg2rad(gx["inc"]))
+    v = vlos / np.sin(np.deg2rad(inc))
+    R = gx["R_kpc"] * d_mpc / gx["D"] * KPC
+    m_motion = (v * 1e3) ** 2 * R / GM_SUN
+    k = (d_mpc / gx["D"]) ** 2
+    m_visible = (ml * gx["L36"] + 1.33 * gx["MHI"]) * 1e9 * k
+    return dict(v=v, vlos=vlos, R_kpc=R / KPC, motion=m_motion, visible=m_visible)
+
+
+def cycles_seen():
+    """How much of one full turn of the motion behind each mass has been watched. The periods are themselves calculations."""
+    gx = sparc_galaxy("NGC3198")
+    gm = galaxy_mass(gx, gx["inc"], gx["D"])
+    t_gal = 2 * np.pi * gm["R_kpc"] * KPC / (gm["v"] * 1e3) / YEAR_S
+    m87 = mass_m87(42.0, 11.0, 16.8)
+    t_ring = 2 * np.pi * (np.sqrt(27.0) / 2 * 2) ** 1.5 * m87 * T_SUN / DAY_S   # gas orbit near the ring, days
+    lag_s = 15 * DAY_S
+    t_blr = 2 * np.pi * C_KMS * lag_s / NGC5548_WIDTH / YEAR_S
+    return [
+        ("Sun: Mercury, by radar and spacecraft since 1964", (2026 - 1964) / 0.2408, "orbits"),
+        ("Sgr A*: the star S2, since " + str(S2_FIRST_YEAR), (2026 - S2_FIRST_YEAR) / S2_PERIOD_YR[0], "orbits"),
+        ("M87*: gas near the ring, one week of observing", 7 / t_ring, "orbits"),
+        ("NGC 5548: broad-line gas, one season (~150 days)", 150 / 365.25 / t_blr, "orbits"),
+        ("NGC 3198: outer disk, ~100 years of telescopes", 100 / t_gal, "orbits"),
+    ]
+
+
+def mass_budget():
+    """For each object: the spread from the measured part and from each assumed part, as a factor (high / low)^(1/2)."""
+    out = [("Sun (in kg)", "measured: G·M from planets", 1 + 1e-10),
+           ("Sun (in kg)", "assumed: which lab value of G", np.sqrt(G_LAB[2] / G_LAB[1]))]
+    _, e = sgr_a_measured_part()
+    ds = [d for _, d in GC_DISTANCES]
+    out.append(("Sgr A*", "measured: angle³ / period²", 1 + e))
+    out.append(("Sgr A*", "assumed: distance", np.sqrt(mass_sgr_a(max(ds)) / mass_sgr_a(min(ds)))))
+    out.append(("M87*", "measured: ring angle", np.sqrt(45.0 / 39.0)))
+    out.append(("M87*", "assumed: ring-to-mass shape factor", np.sqrt(M87_ALPHA[2] / M87_ALPHA[1])))
+    out.append(("M87*", "assumed: distance", np.sqrt(M87_D_MPC[2] / M87_D_MPC[1])))
+    ms = [m for _, m, _, _ in M87_OTHER]
+    out.append(("M87*", "assumed: which recipe (gas, stars, ring)", np.sqrt(max(ms) / min(ms))))
+    out.append(("NGC 5548", "measured: lag × width² (mean over years)", 1 + NGC5548_MEAN_MASS[1] / NGC5548_MEAN_MASS[0]))
+    out.append(("NGC 5548", "changes: lag in different years", np.sqrt(NGC5548_LAG_D[1] / NGC5548_LAG_D[0])))
+    fs = [f for _, f in VIRIAL_F]
+    out.append(("NGC 5548", "assumed: virial factor f", np.sqrt(max(fs) / min(fs))))
+    gx = sparc_galaxy("NGC3198")
+    out.append(("NGC 3198", "measured: Doppler swing", 1 + 2 * gx["eV"] / gx["V"]))
+    lo = galaxy_mass(gx, gx["inc"] + gx["eInc"], gx["D"])["motion"]; hi = galaxy_mass(gx, gx["inc"] - gx["eInc"], gx["D"])["motion"]
+    out.append(("NGC 3198", "assumed: tilt from a circular outline", np.sqrt(hi / lo)))
+    out.append(("NGC 3198", "assumed: distance", np.sqrt((gx["D"] + gx["eD"]) / (gx["D"] - gx["eD"]))))
+    return out
