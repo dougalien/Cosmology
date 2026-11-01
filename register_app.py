@@ -1133,6 +1133,152 @@ predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too st
     st.caption("The registers are built from the left-hand column: redshift, angle, flux and time ratios.")
 
 
+def page_bubbles():
+    st.title("Bubbles and belts")
+    st.markdown("""
+Anything that blows out a wind blows a bubble, but only where the wind runs into something. The edge sits where the
+wind's push, which thins as it spreads, falls to the push from outside. That balance is the **ideal**: a closed, round
+edge at one distance. The register is **Q = measured edge distance ÷ balance distance**. Every measured edge here was
+crossed by a spacecraft, so the distances are measured inside the Solar System, not calculated from afar. The second half
+reads the asteroid and Kuiper belts as timing: orbital periods compared with whole-number fractions of a planet's period.
+""")
+    st.sidebar.markdown("**The wind (measured near Earth)**")
+    p1 = st.sidebar.slider("Solar wind push at Earth's distance (nPa)", 0.5, 5.0, 2.0, 0.1,
+                           help="Spacecraft upstream of Earth measure 1 to 3 nPa on most days; storms reach 10 or more.")
+    st.sidebar.markdown("**Assumed parts**")
+    f = st.sidebar.slider("Field pile-up at a magnetic edge (factor)", 1.5, 2.5, 2.0, 0.05,
+                          help="A planet's field is compressed against the wind. 2 is the textbook flat-wall value; 2.44 allows for a curved edge.")
+    st.sidebar.markdown("**Interstellar gas (measured by Voyager and IBEX)**")
+    b_out = st.sidebar.slider("Outside magnetic field (nT)", 0.2, 0.8, 0.5, 0.05)
+    n_out = st.sidebar.slider("Outside ion density (per cm³)", 0.04, 0.2, 0.10, 0.01)
+    v_out = st.sidebar.slider("Oncoming flow speed (km/s)", 15.0, 35.0, 25.4, 0.1)
+    t_out = st.sidebar.slider("Outside temperature (K)", 5000, 10000, 7500, 250)
+
+    # ---------------- 1. one wind, many edges
+    st.header("1. One wind, many edges")
+    mp = R.magnetopause_register(p1, f)
+    po = R.outside_pressure(b_out, n_out, t_out, v_out)
+    r_h = R.heliosphere_ideal(p1, po["total"])
+    hel = [dict(body=f"{who.replace('Voyager ', 'V')} {'shock' if edge.startswith('term') else 'heliopause'} ({side[0].upper()})", ideal=r_h, measured=d, Q=d / r_h, year=yr) for who, edge, d, yr, side in R.VOYAGER]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[r["body"] for r in mp], y=[r["Q"] for r in mp], mode="markers", name="planet magnetic bubbles",
+                             marker=dict(size=13, color=PALETTE[1], line=dict(color="white", width=1)),
+                             error_y=dict(type="data", array=[r["err"] for r in mp], visible=True),
+                             text=[f"ideal {r['ideal']:.1f}, crossed {r['lo']:g}–{r['hi']:g} planet radii" for r in mp],
+                             hovertemplate="%{x}<br>%{text}<br>Q=%{y:.2f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=[h["body"] for h in hel], y=[h["Q"] for h in hel], mode="markers", name="the Sun's bubble (Voyager crossings)",
+                             marker=dict(size=13, color=brand.RUST, symbol="diamond", line=dict(color="white", width=1)),
+                             text=[f"ideal {h['ideal']:.0f} AU, crossed at {h['measured']:g} AU in {int(h['year'])}" for h in hel],
+                             hovertemplate="%{x}<br>%{text}<br>Q=%{y:.2f}<extra></extra>"))
+    ref_line(fig, label="edge exactly where the pushes balance, Q = 1")
+    fig.layout.annotations[-1].update(xref="paper", x=1, xanchor="right")
+    base_layout(fig, "", "Q = measured edge ÷ balance distance", height=480)
+    fig.update_xaxes(type="category")
+    fig.update_yaxes(range=[0, max(2.4, max(r["Q"] for r in mp) + 0.3)])
+    st.plotly_chart(fig, width="stretch")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Sun's balance distance", f"{r_h:.0f} AU", "with the sidebar inputs", delta_color="off")
+    c2.metric("Termination shock, two directions", f"{R.VOYAGER[0][2]:g} vs {R.VOYAGER[1][2]:g} AU",
+              f"{abs(R.VOYAGER[0][2] / R.VOYAGER[1][2] - 1) * 100:.0f}% apart", delta_color="off")
+    c3.metric("Heliopause, two directions", f"{R.VOYAGER[2][2]:g} vs {R.VOYAGER[3][2]:g} AU",
+              f"{abs(R.VOYAGER[2][2] / R.VOYAGER[3][2] - 1) * 100:.0f}% apart", delta_color="off")
+    st.markdown(f"""
+- **One input sets every ideal.** The planets' balance distances and the Sun's all use the same solar wind push from the
+  sidebar, thinned by distance from the Sun. Move it and every ideal moves together; the measured crossings stay put.
+- **Earth and Neptune sit near Q = 1.** Their edges are where a plain balance of field against wind puts them.
+- **Jupiter and Saturn sit well above 1.** Their bubbles are inflated from inside: Io and Enceladus pour gas into them,
+  which adds a push the ideal leaves out. The departure is a reading of that extra push.
+- **Uranus sits below 1.** Its field is tipped about 60° from its spin axis and set off-centre, so the plain field
+  ideal overstates it. One flyby, in one season, gave its edge.
+- **The Sun's bubble has two edges.** The wind's push meets the outside push near the ideal ({r_h:.0f} AU here), and
+  that is about where the wind is stopped (termination shock, Q ≈ {hel[0]['Q']:.2f} and {hel[1]['Q']:.2f}). The slowed wind then
+  piles up in a layer about 25–35 AU thick before the true edge, the heliopause (Q ≈ {hel[2]['Q']:.2f}).
+- **Shape.** Two crossings, one about 30° north and one about 30° south of the nose, differ by 12% at the shock and 2% at the heliopause.
+  The tilt of the outside field squeezes the south. The tail has never been crossed: models range from a long comet
+  tail to a two-lobed "croissant" to a nearly round bubble. The edge also breathes with the 11-year solar cycle, and the
+  crossings came years apart.
+""")
+    pdf = pd.DataFrame([dict(part="outside magnetic field", push_pPa=po["field"] * 1e12),
+                        dict(part="outside heat (ions + electrons)", push_pPa=po["heat"] * 1e12),
+                        dict(part="oncoming interstellar flow", push_pPa=po["flow"] * 1e12),
+                        dict(part="total outside push", push_pPa=po["total"] * 1e12)])
+    st.dataframe(pdf.style.format({"push_pPa": "{:.3f}"}), hide_index=True, width="stretch")
+    st.caption("Push in piconewtons per square metre (pPa). The wind's push at Earth's distance is about 2,000 pPa, so it "
+               "falls by the square of distance to match about 0.2 pPa near 100 AU. Neutral interstellar hydrogen passes "
+               "through the edge and is left out. Planet balance: (f·B)²/2μ₀ at the edge, with the field falling as the "
+               "cube of distance. Crossing ranges for the planets come from many spacecraft passes; the point is the middle "
+               "of the range.")
+
+    # ---------------- 2. two winds meeting
+    st.header("2. When two bubbles meet")
+    st.markdown("""
+Two stars with winds, side by side. The ideal is the surface where their pushes are equal. That surface is **closed**:
+a sphere wrapped around the weaker star (a flat wall if they push equally). Real wind carries momentum sideways, so the
+meeting surface follows the flow (Cantó, Raga and Wilkin 1996) and **opens into a cone** that trails away from the
+stronger wind. The two agree at the nose and part company away from it. Binary stars such as WR 140, η Carinae and the
+WR 104 pinwheel show the cone; the heliosphere's nose and tail are the same story with the interstellar gas as the
+second wind.
+""")
+    eta = st.slider("Weaker wind's push ÷ stronger wind's push (outflow × speed)", 0.005, 1.0, 0.1, 0.005, format="%.3f")
+    s = R.two_wind_surface(eta)
+    g = go.Figure()
+    cx, cy = s["circle"]
+    g.add_trace(go.Scatter(x=cx, y=cy, mode="lines", name="ideal: equal push (closed)", line=dict(color=REF, dash="dash", width=2)))
+    fx, fy = s["flow"]
+    g.add_trace(go.Scatter(x=np.r_[fx[::-1], fx[1:]], y=np.r_[-fy[::-1], fy[1:]], mode="lines", name="with momentum carried (opens)",
+                           line=dict(color=brand.RUST, width=3)))
+    g.add_trace(go.Scatter(x=[0, 1], y=[0, 0], mode="markers+text", text=["stronger wind", "weaker wind"], textposition="bottom center",
+                           marker=dict(size=[18, 11], color=[BLACK, PALETTE[1]]), showlegend=False))
+    base_layout(g, "along the line between the stars (separation = 1)", "across", height=520)
+    g.update_xaxes(range=[-0.6, 3.4], scaleanchor="y", scaleratio=1)
+    g.update_yaxes(range=[-1.6, 1.6])
+    st.plotly_chart(g, width="stretch")
+    c1, c2 = st.columns(2)
+    c1.metric("Nose, from the stronger star", f"{s['nose']:.3f}", "both shapes agree here: Q = 1", delta_color="off")
+    c2.metric("Cone half-angle far away", f"{s['cone_deg']:.0f}°", "the ideal sphere has none: it closes", delta_color="off")
+
+    # ---------------- 3. belts
+    st.header("3. Belts at a frequency")
+    st.markdown("""
+An asteroid's orbit is fitted from where it appears and when, so its **period** is timing, measured directly. Here each
+period is divided by Jupiter's (or, for the Kuiper belt, Neptune's). The ideal is an exact whole-number fraction.
+Where the fraction is exact, Jupiter's pull lines up with the asteroid on the same part of every orbit; for some
+fractions that empties the orbit (a gap), for others it locks the asteroid in place (a clump).
+""")
+    planet = st.radio("Belt", ["Asteroid belt (against Jupiter)", "Kuiper belt (against Neptune)"], horizontal=True)
+    pl = "Jupiter" if planet.startswith("Asteroid") else "Neptune"
+    c, n, w = R.period_ratio_bins()[pl]
+    reads = R.resonance_readings(pl)
+    h = go.Figure()
+    h.add_trace(go.Bar(x=c, y=n, width=w, marker_color="#7C8A86", name=f"objects per bin (bin width {w:g})",
+                       hovertemplate="period ratio %{x:.4f}<br>%{y} objects<extra></extra>"))
+    for r in reads:
+        h.add_vline(opacity=1, x=r["exact"], line=dict(color=brand.RUST if r["kind"] == "gap" else PALETTE[1], dash="dot", width=1.3))
+        h.add_annotation(x=r["exact"], y=1.0, yref="paper", text=r["ratio"], showarrow=False, yanchor="bottom",
+                         font=dict(color=brand.RUST if r["kind"] == "gap" else PALETTE[1], size=12))
+    base_layout(h, f"orbital period ÷ {pl}'s period", "number of objects", ylog=(pl == "Jupiter"), height=480)
+    h.update_layout(bargap=0, showlegend=True)
+    st.plotly_chart(h, width="stretch")
+    rdf = pd.DataFrame([dict(ratio=f"{r['ratio']}  (exact {r['exact']:.4f})", what=r["kind"],
+                             found_at=r["found"], Q=r["Q"], one_bin=r["bin_Q"]) for r in reads])
+    st.dataframe(rdf.rename(columns={"found_at": "found at", "Q": "Q = found ÷ exact", "one_bin": "one bin, in Q"})
+                 .style.format({"found at": "{:.4f}", "Q = found ÷ exact": "{:.4f}", "one bin, in Q": "±{:.4f}"}),
+                 hide_index=True, width="stretch")
+    st.markdown("""
+- In the asteroid belt the **gaps** sit at Q = 1 to within about a bin: 1/3, 2/5, 3/7 and 1/2 of Jupiter's period. These are
+  the Kirkwood gaps. The 2:1 gap is also where the main belt ends.
+- The **clumps** also sit at Q = 1: the Hildas at 2/3 of Jupiter's period and the Trojans sharing it (1:1).
+- In the Kuiper belt the Plutinos, Pluto among them, pile up at exactly 3/2 of Neptune's period, with smaller piles at 2/1
+  and 5/2.
+- So the belts are organised by frequency. Gaps and clumps are set by timing against one planet, read without any distance.
+  Distances follow afterwards, by calculation.
+""")
+    st.caption("Orbits: JPL Small-Body Database snapshot (as packaged in the public Kaggle asteroid file Asteroid_Updated.csv), "
+               "744,296 orbits with orbit-quality code 0–5. Jupiter's period 11.8626 years, Neptune's 164.79 years. A gap is "
+               "read at its emptiest bin, and a clump at its count-weighted centre, within ±0.006 of the exact ratio "
+               "(Jupiter) or ±0.03 (Neptune). The Kuiper sample holds about 2,300 objects, so its piles are small.")
+
+
 PAGES = {
     "Premise": page_premise,
     "All registers": page_overview,
@@ -1149,6 +1295,7 @@ PAGES = {
     "Light and matter together": page_light_matter,
     "Gravity: departure from G": page_gravity,
     "Mass: a reading": page_mass,
+    "Bubbles and belts": page_bubbles,
     "No fixed point": page_motion,
     "Sources": sources.page,
 }

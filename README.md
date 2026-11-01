@@ -6,7 +6,7 @@ The geometry of the universe, read from measurements. A [Dougalien Systems](http
 
 **Live app:** https://doug-cosmology.streamlit.app/
 
-A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app lays published measurements side by side as registers: shape (solids, spheres, outlines, orbits, craters), flux dimming (Pantheon+ supernovae), time dilation, ageing rate (cosmic chronometers), the acoustic angle, cusp flux ratios, galaxy rotation (SPARC), single-value registers, light and matter read together on one object (S2 and binary pulsars), gravity as a departure from one G, mass as a reading built from measured angles, times and Doppler shifts plus assumed distances and shapes, whether the redshift registers share one shape, and relative motion. Each page shows its data and sources.
+A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app lays published measurements side by side as registers: shape (solids, spheres, outlines, orbits, craters), flux dimming (Pantheon+ supernovae), time dilation, ageing rate (cosmic chronometers), the acoustic angle, cusp flux ratios, galaxy rotation (SPARC), single-value registers, light and matter read together on one object (S2 and binary pulsars), gravity as a departure from one G, mass as a reading built from measured angles, times and Doppler shifts plus assumed distances and shapes, whether the redshift registers share one shape, bubbles where a wind meets its surroundings and belts organised by orbital period, and relative motion. Each page shows its data and sources.
 
 ## Run it
 
@@ -23,7 +23,7 @@ To put it online, sign in at [share.streamlit.io](https://share.streamlit.io), c
 | --- | --- |
 | `register_app.py` | The pages |
 | `registers.py` | The register calculations and data loading |
-| `register_data/` | Published data the registers read (Pantheon+, SPARC, chronometers, Planck, crater counts) |
+| `register_data/` | Published data the registers read (Pantheon+, SPARC, chronometers, Planck, crater counts, asteroid period-ratio counts) |
 | `dougalien_brand.py`, `assets/`, `.streamlit/config.toml` | The Dougalien Systems look |
 
 The full Pantheon+ STAT+SYS covariance is large and is read from a local folder when present; without it the app uses the binned data and says so.

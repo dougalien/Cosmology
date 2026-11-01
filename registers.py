@@ -895,3 +895,132 @@ def mass_budget():
     out.append(("NGC 3198", "assumed: tilt from a circular outline", np.sqrt(hi / lo)))
     out.append(("NGC 3198", "assumed: distance", np.sqrt((gx["D"] + gx["eD"]) / (gx["D"] - gx["eD"]))))
     return out
+
+
+# ------------------------------------------------- bubbles: where a wind meets its surroundings
+MU0 = 4e-7 * np.pi
+K_B = 1.380649e-23
+M_P = 1.67262e-27
+# Planetary magnetopauses: distance from the Sun (AU, radar), equatorial surface field (nT),
+# observed nose distance range (planet radii, spacecraft crossings). Bagenal (2013) Table; Mercury from Winslow et al. (2013).
+MAGNETOPAUSES = [
+    ("Mercury", 0.387, 195.0, 1.40, 1.60),
+    ("Earth", 1.000, 30600.0, 8.0, 12.0),
+    ("Jupiter", 5.20, 428000.0, 63.0, 92.0),
+    ("Saturn", 9.54, 21000.0, 22.0, 27.0),
+    ("Uranus", 19.2, 23000.0, 17.0, 19.0),
+    ("Neptune", 30.1, 14000.0, 23.0, 26.0),
+]
+# Voyager in-situ crossings (AU) and year: termination shock and heliopause
+VOYAGER = [
+    ("Voyager 1", "termination shock", 94.0, 2004.96, "north"),
+    ("Voyager 2", "termination shock", 83.7, 2007.66, "south"),
+    ("Voyager 1", "heliopause", 121.6, 2012.65, "north"),
+    ("Voyager 2", "heliopause", 119.0, 2018.84, "south"),
+]
+
+
+def magnetopause_ideal(p_1au_npa, d_au, b_nt, f=2.0):
+    """Nose distance (planet radii) where the planet's compressed dipole field pressure equals the wind's push.
+
+    (f B0)^2 / (2 mu0) * r^-6 = P_wind, with P_wind = P(1 AU) / d^2. f is the assumed field compression at the edge.
+    """
+    p = p_1au_npa * 1e-9 / d_au ** 2
+    b = b_nt * 1e-9
+    return ((f * b) ** 2 / (2 * MU0 * p)) ** (1 / 6)
+
+
+def magnetopause_register(p_1au_npa=2.0, f=2.0):
+    rows = []
+    for name, d, b, lo, hi in MAGNETOPAUSES:
+        r0 = magnetopause_ideal(p_1au_npa, d, b, f)
+        mid = 0.5 * (lo + hi)
+        rows.append(dict(body=name, d_au=d, ideal=r0, measured=mid, lo=lo, hi=hi, Q=mid / r0, err=0.5 * (hi - lo) / r0))
+    return rows
+
+
+def outside_pressure(b_nt=0.5, n_cm3=0.1, t_k=7500.0, v_kms=25.4):
+    """Push from the local interstellar gas on the heliosphere, in Pa: field + heat (ions and electrons) + oncoming flow (ions)."""
+    n = n_cm3 * 1e6
+    mag = (b_nt * 1e-9) ** 2 / (2 * MU0)
+    heat = 2 * n * K_B * t_k
+    ram = n * M_P * (v_kms * 1e3) ** 2
+    return dict(field=mag, heat=heat, flow=ram, total=mag + heat + ram)
+
+
+def heliosphere_ideal(p_1au_npa, p_out_pa):
+    """Distance (AU) where the wind's push, falling as 1/d^2 from its 1 AU value, equals the outside push."""
+    return np.sqrt(p_1au_npa * 1e-9 / p_out_pa)
+
+
+def two_wind_surface(eta, n=600):
+    """Where two winds meet. Star 1 (stronger) at x=0, star 2 at x=1; eta = (Mdot v)_2 / (Mdot v)_1 <= 1.
+
+    Returns the equal-push surface (an Apollonius circle; closed) and the momentum-carrying surface of
+    Canto, Raga & Wilkin (1996): theta1 cot theta1 = 1 + eta (theta2 cot theta2 - 1), R = sin theta2 / sin(theta1+theta2).
+    """
+    from scipy.optimize import brentq
+    k = np.sqrt(eta)
+    nose = 1 / (1 + k)                       # distance of the meeting point from star 1, on the line between them
+    phi = np.linspace(0, 2 * np.pi, 400)
+    if abs(1 - k) < 1e-6:
+        circ = (np.full(2, 0.5), np.array([-3.0, 3.0]))
+    else:
+        xc, rc = 1 / (1 - k ** 2), k / (1 - k ** 2)
+        circ = (xc + rc * np.cos(phi), rc * np.sin(phi))
+    tc = lambda t: t / np.tan(t) if t > 1e-9 else 1.0
+    xs, ys = [nose], [0.0]
+    theta2_last = 0.0
+    for t2 in np.linspace(1e-4, np.pi - 1e-4, n):
+        rhs = 1 + eta * (tc(t2) - 1)
+        try:
+            t1 = brentq(lambda t: tc(t) - rhs, 1e-9, np.pi - 1e-9)
+        except ValueError:
+            break
+        if t1 + t2 >= np.pi - 1e-3:
+            break
+        r = np.sin(t2) / np.sin(t1 + t2)
+        xs.append(r * np.cos(t1)); ys.append(r * np.sin(t1))
+        theta2_last = t2
+    xs, ys = np.array(xs), np.array(ys)
+    keep = np.hypot(xs, ys) < 6
+    open_half_angle = np.degrees(np.pi - theta2_last)   # cone half-angle around star 2, seen from far away
+    return dict(nose=nose, circle=circ, flow=(xs[keep], ys[keep]), cone_deg=open_half_angle)
+
+
+# ----------------------------------------------------------- belts: orbital period ratios
+RESONANCES_J = [("3:1", 1 / 3, "gap"), ("5:2", 2 / 5, "gap"), ("7:3", 3 / 7, "gap"), ("2:1", 1 / 2, "gap"),
+                ("3:2", 2 / 3, "clump (Hildas)"), ("1:1", 1.0, "clump (Trojans)")]
+RESONANCES_N = [("1:1", 1.0, "clump (Neptune Trojans)"), ("3:2", 1.5, "clump (Plutinos)"), ("2:1", 2.0, "clump"),
+                ("5:2", 2.5, "clump")]
+
+
+@lru_cache(maxsize=1)
+def period_ratio_bins():
+    rows = _csv("asteroid_period_ratio_bins.csv")
+    out = {}
+    for planet in ("Jupiter", "Neptune"):
+        r = [x for x in rows if x["planet"] == planet]
+        lo = np.array([float(x["lo"]) for x in r]); hi = np.array([float(x["hi"]) for x in r])
+        out[planet] = (0.5 * (lo + hi), np.array([int(x["count"]) for x in r]), hi[0] - lo[0])
+    return out
+
+
+def resonance_readings(planet="Jupiter"):
+    """Where each gap or clump actually sits, read from the counts, compared with the exact whole-number ratio."""
+    c, n, w = period_ratio_bins()[planet]
+    table = RESONANCES_J if planet == "Jupiter" else RESONANCES_N
+    out = []
+    for lab, r, kind in table:
+        half = 0.006 if planet == "Jupiter" else 0.03
+        m = (c > r - half) & (c < r + half)
+        if m.sum() < 3 or n[m].sum() == 0:
+            continue
+        if kind == "gap":
+            loc = c[m][np.argmin(n[m])]
+            depth = n[m].min() / np.median(n[(c > r - 4 * half) & (c < r + 4 * half)])
+        else:
+            loc = np.sum(c[m] * n[m]) / n[m].sum()
+            depth = n[m].max() / max(np.median(n[(c > r - 4 * half) & (c < r + 4 * half)]), 1)
+        out.append(dict(ratio=lab, exact=r, kind=kind, found=loc, Q=loc / r, bin_Q=w / r, count_ratio=depth))
+    return out
