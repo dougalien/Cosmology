@@ -124,6 +124,7 @@ measured from here.
         ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
         ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
         ["Mass: a reading", "Sgr A*, M87*, NGC 5548, disk galaxies", "measured part only (no assumptions)", "each assumption in turn", "GRAVITY, EHT, reverberation, SPARC"],
+        ["Light: departure from the vacuum limit", "Glass, plasma, light near mass, vacuum tests", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, pulsar timing, Cassini, GW170817"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), hide_index=True, width="stretch")
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
@@ -1000,6 +1001,114 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
 """)
 
 
+def page_light_speed():
+    st.title("Light: departure from the vacuum limit")
+    st.markdown("""
+Light speed is called a constant, but no light anyone has measured moves at it. Two things sit behind the word.
+
+- **A unit choice.** Since 1983 the metre has been *defined* as the distance light travels in vacuum in
+  1/299,792,458 of a second. So 299,792,458 m/s is exact by definition and can no longer be measured. Every speed
+  measured since is already a ratio to it.
+- **A local claim.** Where time deforms, rulers deform with it, so a measurement made in one place always gives the
+  same number. The departure only shows when two places are compared, as in the extra delay of light passing the Sun.
+
+A pure vacuum is never found. So, as everywhere in FDG, the vacuum speed is an **ideal**, a limit for comparison.
+The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart reads how far each case falls short of it,
+**1 − Q_c**. Nothing that carries a signal has ever been measured above it.
+""")
+    f_ghz = st.sidebar.select_slider("Radio frequency for the plasma rows (GHz)",
+                                     options=[0.1, 0.2, 0.4, 0.7, 1.0, 1.4, 2.0, 4.0, 8.0], value=1.0)
+    rows = R.light_speed_table(f_ghz)
+    df = pd.DataFrame(rows)
+    colors = {"Matter": PALETTE[0], "Plasma": PALETTE[1], "Near mass": PALETTE[2], "Vacuum tests": PALETTE[5], "Calculated": "#9AA5AB"}
+    symbols = {"measured": "circle", "calculated": "circle-open", "upper limit": "triangle-left"}
+    fig = go.Figure()
+    for (grp, kind), d in df.groupby(["group", "kind"], sort=False):
+        fig.add_trace(go.Scatter(
+            x=d.departure, y=d.reading, mode="markers", name=f"{grp} ({kind})",
+            marker=dict(size=13, color=colors[grp], symbol=symbols[kind], line=dict(width=2, color=colors[grp])),
+            customdata=np.c_[d.measured, d.added], text=[f"{q:.15g}" if np.isfinite(q) else "at least this close" for q in d.Q_c],
+            hovertemplate="%{y}<br>1 − Q_c = %{x:.3g}<br>Q_c = %{text}<br>measured: %{customdata[0]}<br>added: %{customdata[1]}<extra></extra>"))
+    base_layout(fig, "departure from the vacuum limit, 1 − Q_c (left is closer to the ideal)", "", xlog=True, height=720)
+    fig.update_xaxes(range=[-20, 0.4], dtick=2, exponentformat="power")
+    fig.update_yaxes(type="category", autorange="reversed", categoryorder="array", categoryarray=list(df.reading))
+    fig.update_layout(legend=dict(orientation="h", y=-0.12))
+    st.plotly_chart(fig, width="stretch")
+    st.caption("Filled: measured. Open: calculated from a measured form or an assumed density. Triangles: upper limits "
+               "(the true departure is somewhere to the left). Hover for what is measured and what is added.")
+
+    st.subheader("Readings")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Readings span", "19 decades", "slow light near 1, a lab vacuum at 3×10⁻¹⁹", delta_color="off")
+    ion = df[df.reading.str.startswith("Ionosphere")].departure.iloc[0]
+    c2.metric(f"Ionosphere at {f_ghz:g} GHz", f"{ion:.1e}", "why GPS sends on two frequencies", delta_color="off")
+    c3.metric("Gravity and light agree to", "3×10⁻¹⁵", "GW170817, after ~130 million years", delta_color="off")
+    st.markdown("""
+- **Matter** gives the large departures. Q_c here is 1/n, the refractive index, read from refraction angles alone.
+  Light crossing a cold atom cloud slowed to 17 m/s, and has been stopped altogether.
+- **Plasma** is everywhere in space, so radio signals always arrive late, and later at lower frequency (the lag goes as
+  1/frequency²). Move the slider: the same gas departs 100 times more at 0.1 GHz than at 1 GHz. Space between the
+  stars is not a vacuum; its departure is about 10⁻¹² at 1 GHz.
+- **Near mass** light takes longer to cross, read as the extra Cassini delay past the Sun. Spread over the path, that is a
+  departure of a few parts in a million at the Sun's edge. It is the same reading as the *Gravity: departure from G*
+  page, seen from the light side. Measured locally the departure is zero, because the clock slows with the light.
+- **Vacuum tests** come closest. Gravity and light from one neutron-star merger arrived 1.7 s apart. Gamma rays of very
+  different energy from one burst arrived together. Both turn into a fraction only with a distance, and both compare
+  one signal with another, so they show that two signals depart *together*, not that either sits at the ideal.
+""")
+
+    st.header("Colour changes the reading")
+    lam = np.linspace(0.25, 2.0, 300)
+    n, ng = R.silica_index(lam)
+    fr = np.logspace(-1, 1, 200)
+    fig = make_subplots(rows=1, cols=2, subplot_titles=("Glass (fused silica): Q_c against wavelength",
+                                                        "Plasma: 1 − Q_c against radio frequency"))
+    fig.add_trace(go.Scatter(x=lam, y=1 / n, name="crest of the wave (phase, 1/n)", line=dict(color=PALETTE[0], width=2.5)), 1, 1)
+    fig.add_trace(go.Scatter(x=lam, y=1 / ng, name="a pulse, the signal (group, 1/n_g)", line=dict(color=BLACK, width=2.5)), 1, 1)
+    for i, (name, ne, _) in enumerate(R.PLASMAS):
+        fig.add_trace(go.Scatter(x=fr, y=R.plasma_departure(ne, fr), name=name, line=dict(color=PALETTE[(i + 1) % len(PALETTE)], width=2)), 1, 2)
+    fig.update_xaxes(title="wavelength (µm)", row=1, col=1, showgrid=True, gridcolor="#E3E6E5")
+    fig.update_yaxes(title="Q_c", row=1, col=1, showgrid=True, gridcolor="#E3E6E5")
+    fig.update_xaxes(title="frequency (GHz)", type="log", row=1, col=2, showgrid=True, gridcolor="#E3E6E5")
+    fig.update_yaxes(title="1 − Q_c", type="log", exponentformat="power", row=1, col=2, showgrid=True, gridcolor="#E3E6E5")
+    fig.update_layout(height=460, template="simple_white", margin=dict(l=60, r=20, t=50, b=50), legend=dict(orientation="h", y=-0.25))
+    st.plotly_chart(fig, width="stretch")
+    st.markdown("""
+There is no single "speed of light in glass": it depends on colour, and a pulse moves slower than the wave crests inside
+it. In an optical fibre at 1.55 µm a signal runs at about 0.68 of the limit. In plasma the crests run *faster* than the
+limit while the signal runs slower; only the signal carries information, and it never passes Q_c = 1.
+""")
+
+    st.header("How the ideal was fixed")
+    h = pd.DataFrame(R.C_HISTORY, columns=["year", "who", "km_s", "err"])
+    h["departure"] = np.abs(h.km_s / R.C_KMS - 1)
+    h["rel_err"] = h.err / R.C_KMS
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=h.year, y=h.departure, mode="markers+lines", name="|measured ÷ today's defined value − 1|",
+                             line=dict(color=PALETTE[0], dash="dot"), marker=dict(size=10, color=PALETTE[0]), text=h.who,
+                             hovertemplate="%{text}, %{x}<br>off by %{y:.2g}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=h.year, y=h.rel_err, mode="markers", name="the measurement's own stated uncertainty",
+                             marker=dict(size=10, color=BLACK, symbol="line-ew-open", line=dict(width=3)), text=h.who,
+                             hovertemplate="%{text}, %{x}<br>uncertainty %{y:.2g}<extra></extra>"))
+    fig.add_vline(opacity=1, x=1983, line=dict(color=REF, dash="dash", width=1.5), annotation_text="1983: value fixed by definition",
+                  annotation_position="top left")
+    base_layout(fig, "year", "fractional difference", ylog=True, height=440)
+    fig.update_yaxes(exponentformat="power")
+    st.plotly_chart(fig, width="stretch")
+    st.markdown("""
+For three centuries c was a measurement, and each new method came closer to the last. By 1972 the measurements agreed to
+a few parts in a billion, limited by how well the metre itself was known. In 1983 the number was frozen and the metre
+was redefined from it. Since then a "measurement of c" is really a measurement of length. The ideal was not found in
+nature; it was chosen as the best limit known, and kept fixed so that everything else could be compared with it.
+""")
+    st.dataframe(df[["reading", "group", "kind", "departure", "Q_c", "measured", "added"]]
+                 .style.format({"departure": "{:.3g}", "Q_c": "{:.12g}"}, na_rep="—"), hide_index=True, width="stretch")
+    st.caption("Plasma departures use the signal (group) speed, c(1 − f_p²/2f²), with the plasma frequency f_p = 8.98 kHz × √(electrons per cm³). "
+               "The pulsar rows need a distance to turn the measured lag into a density: parallax for J0437−4715, about 2 kpc for the Crab. "
+               "The near-mass rows spread the delay over the path in the usual (isotropic) coordinates, so they depend on that choice; "
+               "the delay itself is a time. GW170817 and GRB 090510 need a travel time, which comes from a distance or a redshift.")
+
+
 def page_motion():
     st.title("No fixed point: relative motion")
     st.markdown("""
@@ -1149,6 +1258,7 @@ PAGES = {
     "Light and matter together": page_light_matter,
     "Gravity: departure from G": page_gravity,
     "Mass: a reading": page_mass,
+    "Light: departure from the vacuum limit": page_light_speed,
     "No fixed point": page_motion,
     "Sources": sources.page,
 }
