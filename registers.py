@@ -189,6 +189,24 @@ def load_pantheon_plus(full_cov=True):
     return t, cov
 
 
+@lru_cache(maxsize=1)
+def load_des5yr():
+    """DES 5-year supernovae (DES-Dovekie release): a table shaped like Pantheon+ for flux_dimming_plus, and its
+    STAT+SYS covariance. MU is the bias-corrected distance modulus; its zero point (H0 = 70) cancels in the register.
+    The release stores the inverse covariance as an upper triangle."""
+    rows = [l.split() for l in open(os.path.join(DATA, "DES-Dovekie_HD.csv")) if l.startswith("SN:")]
+    survey = np.array([int(r[2]) for r in rows])
+    z = np.array([float(r[3]) for r in rows])
+    mu = np.array([float(r[5]) for r in rows])
+    d = np.load(os.path.join(DATA, "DES-Dovekie_STAT+SYS_invcov.npz"))
+    n = int(d["nsn"][0])
+    ic = np.zeros((n, n))
+    ic[np.triu_indices(n)] = d["cov"]
+    ic = ic + ic.T - np.diag(np.diag(ic))
+    t = {"zHD": z, "zCMB": z, "m_b_corr": mu, "IS_CALIBRATOR": np.zeros(n, int), "IDSURVEY": survey}
+    return t, np.linalg.inv(ic)
+
+
 def flux_dimming_plus(t, cov, zcol="zHD", lo=(0.015, 0.06), nbins=17, zmax=2.3):
     """GLS-binned flux-dimming register, as in clean_registers/flux_dimming_cov.py."""
     z = t[zcol]
@@ -311,8 +329,8 @@ def ageing(undo_frame=True, z_anchor=0.2):
 # ----------------------------------------------------------------- acoustic angle
 ANGLES = dict(
     z=np.array([0.110, 0.235, 0.365, 1.725, 2.225]),
-    theta=np.array([19.80, 9.06, 6.33, 1.928, 1.77]),
-    err=np.array([1.05, 0.23, 0.22, 0.094, 0.31]),
+    theta=np.array([19.80, 9.06, 6.33, 1.911, 1.77]),
+    err=np.array([1.05, 0.23, 0.22, 0.062, 0.31]),
     source=["de Carvalho+ 2021", "Carvalho+ 2016", "Carvalho+ 2016", "Avila+ 2025", "de Carvalho+ 2018"],
 )
 
