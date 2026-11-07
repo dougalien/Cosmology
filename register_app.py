@@ -1342,14 +1342,14 @@ is a ratio, the signal's frequency against the medium's own natural frequency, w
     fig.update_yaxes(range=[-0.05, 2.2])
     st.plotly_chart(fig, width="stretch")
     st.markdown(f"""
-- **Far above the plasma frequency** Q_c sits close to 1: starlight crossing the Galaxy. At {f_ghz:g} GHz most places on the
-  ladder are off the right edge, millions of times above their plasma frequency. Lower the frequency slider to bring
-  them onto the curve.
-- **Down toward f_p** Q_c falls smoothly to 0, and **below it** the signal is turned back. This is a true boundary, and it
-  is measured every day: ionosondes sweep a radio frequency upward and read the layer's plasma frequency from where
-  the echo stops.
-- **The crests** run faster than the limit (dotted), and faster the closer they are to the cutoff. Only the signal
-  carries information, and it never passes 1.
+- **Below f_p** no signal passes: it is turned back. This boundary is measured every day: ionosondes sweep a radio
+  frequency upward and read the layer's plasma frequency from where the echo returns.
+- **Just above f_p** Q_c reads close to 0. Read from there toward higher f / f_p, the departure from the vacuum ideal
+  shrinks smoothly, and **far above f_p** Q_c reads close to 1: starlight crossing the Galaxy. At {f_ghz:g} GHz most
+  places on the ladder are off the right edge, millions of times above their plasma frequency; a lower frequency on the
+  slider places them on the curve.
+- **The crests** (dotted) read above the limit, and their departure also shrinks toward 1 as f / f_p grows. Only the
+  signal carries information, and it never reads above 1.
 """)
     st.subheader("Crossing states of matter")
     rows = [dict(medium=n, state=n.split("(")[1].rstrip(")"), crest=q, side="below the limit", read=h) for n, q, h in R.CREST_ACROSS_STATES]
@@ -1364,14 +1364,15 @@ is a ratio, the signal's frequency against the medium's own natural frequency, w
                                                     "side": "Side of the ideal", "read": "Read from"})
                  .style.format({"Crest speed ÷ limit (1/n)": "{:.15g}"}, na_rep="—"), hide_index=True, width="stretch")
     st.markdown("""
-In neutral matter, solid, liquid or gas, the crests run *slower* than the limit. In plasma they run *faster*, while the
-signal still runs slower. So ionizing a gas moves its crest register from one side of the vacuum ideal to the other:
-the states of matter sit on opposite sides of Q = 1. Freezing moves the register in a step too (water 0.750, ice 0.764).
+In neutral matter, solid, liquid or gas, the crest register reads *below* the vacuum ideal. In plasma it reads *above*
+it, while the signal register still reads below. The states of matter sit on opposite sides of Q = 1, each departing
+from the same ideal from its own side. Solid and liquid water sit at different readings too (ice 0.764, water 0.750).
 
 Every medium has natural frequencies of its own: its plasma frequency, and the frequencies its atoms absorb. The register
-changes character where the signal crosses one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
-At an absorption line the speed swings sharply. In a band gap (opals, photonic crystals) there is a forbidden range with
-Q_c falling toward 0 at its edges. A change of state moves those natural frequencies, so the boundaries move with it.
+reads differently on either side of each one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
+At an absorption line the reading swings sharply. In a band gap (opals, photonic crystals) there is a forbidden range,
+with Q_c reading close to 0 at its edges. Different states of the same matter have different natural frequencies, so
+their boundaries sit in different places.
 
 *One caution:* right at an absorption line the group speed can read above 1, or negative; that has been measured. The
 front of a signal still never beats the limit, so the 0 to 1 bounds hold for the signal itself.
