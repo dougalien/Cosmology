@@ -10,8 +10,13 @@ Usage, right after st.set_page_config(...):
 
     from dougalien_brand import apply_branding
     apply_branding()
+
+Headings: call app_header(title, tagline) once, at the top of the front page, and page_header(title, intro)
+at the top of every other page or tab, so each one says what is on it without repeating the app title.
 """
 
+import base64
+import html
 from pathlib import Path
 
 import streamlit as st
@@ -19,6 +24,7 @@ import streamlit as st
 ASSETS = Path(__file__).resolve().parent / "assets"
 LOGO = ASSETS / "dougalien_systems_logo.png"
 MARK = ASSETS / "dougalien_mark.png"
+MARK_SVG = ASSETS / "dougalien_mark.svg"
 SITE_URL = "https://dougalien.com"
 
 PAPER = "#F4F4F1"
@@ -98,6 +104,19 @@ _CSS = f"""
 [data-testid="stLogoLink"]:focus-visible {{ outline: 3px solid {SLATE}; outline-offset: 3px; }}
 /* The script that labels the logo link takes no space on the page */
 [data-testid="stElementContainer"]:has(> [data-testid="stHtml"] > script:only-child) {{ display: none; }}
+
+/* Front-page label: the strata D mark beside "Dougalien Systems", above the app title */
+.dg-label {{
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-family: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600; font-size: 0.95rem; letter-spacing: 0.02em;
+  color: {SLATE} !important; text-decoration: none !important; margin-bottom: -0.6rem;
+}}
+.dg-label img {{ width: 1.6rem; height: 1.6rem; }}
+.dg-label:hover {{ color: {RUST} !important; }}
+/* One plain line under the app title or a page heading */
+.dg-tagline {{ font-size: 1.15rem; color: {INK}; margin: -0.4rem 0 1.2rem 0; max-width: 52rem; }}
+.dg-intro {{ font-size: 1.02rem; color: {CAPTION}; margin: -0.4rem 0 1rem 0; max-width: 52rem; }}
 
 /* Quotes pick up the rust accent */
 .stApp blockquote {{ border-left: 3px solid {RUST}; }}
@@ -231,6 +250,35 @@ def apply_branding():
             pass
     else:
         st.markdown(_CSS, unsafe_allow_html=True)
+
+
+def _mark_src():
+    """The D mark as an inline image, so the label needs no extra request."""
+    if MARK_SVG.exists():
+        return "data:image/svg+xml;base64," + base64.b64encode(MARK_SVG.read_bytes()).decode()
+    if MARK.exists():
+        return "data:image/png;base64," + base64.b64encode(MARK.read_bytes()).decode()
+    return None
+
+
+def app_header(title, tagline):
+    """Front page only: the Dougalien Systems label with the D mark, the app title, and one plain line on what the app does."""
+    src = _mark_src()
+    mark = f'<img src="{src}" alt="">' if src else ""
+    st.markdown(f'<a class="dg-label" href="{SITE_URL}" target="_blank" rel="noopener" '
+                f'title="Visit dougalien.com">{mark}Dougalien Systems</a>', unsafe_allow_html=True)
+    st.title(title, anchor=False)
+    st.markdown(f'<p class="dg-tagline">{html.escape(tagline)}</p>', unsafe_allow_html=True)
+
+
+def page_header(title, intro=None, level=1):
+    """Heading for one page or tab: says what is on it, with an optional short intro. Leave out the app title here.
+
+    level=1 for a page of its own; level=2 for a section that sits under app_header on the front page.
+    """
+    (st.title if level == 1 else st.header)(title, anchor=False)
+    if intro:
+        st.markdown(f'<p class="dg-intro">{html.escape(intro)}</p>', unsafe_allow_html=True)
 
 
 def page_icon(default="🪨"):

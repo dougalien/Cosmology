@@ -153,7 +153,7 @@ SOURCES = [
 
 def page():
     import streamlit as st
-    st.title("Sources")
+    st.title("Sources: the data and papers behind each register")
     st.markdown("Every register divides a published measurement by its ideal. These are the publications and data "
                 "files behind each page. The full list for all Dougalien Systems apps is at "
                 "[dougalien.github.io/geo-tools/citations/](https://dougalien.github.io/geo-tools/citations/#finite-deformable-geometry).")

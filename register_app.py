@@ -70,8 +70,8 @@ SPHERE_LIMIT = 6 * np.sqrt(np.pi)  # the value the faceted sequence approaches; 
 
 # ------------------------------------------------------------------ pages
 def page_premise():
-    st.title("Finite Deformable Geometry")
-    st.markdown("### The geometry of the universe, read from measurements")
+    brand.app_header("Finite Deformable Geometry", "Read the shape of the universe from measurements, by comparing "
+                                                   "each measured value with its ideal.")
     st.markdown("""
 #### 1. What is a register?
 A register is a measured value divided by its ideal value, so the ideal sits at **Q = 1**. The ideal is a reference
@@ -500,7 +500,7 @@ def page_outline():
 
 
 def page_flux():
-    st.title("Flux dimming")
+    st.title("Flux dimming: how supernova light fades with redshift")
     st.markdown("Q = 10^((m − C)/5) / z: the dimming of supernova light divided by redshift, with the nearby supernovae "
                 "setting Q = 1. It is built from magnitudes (flux ratios) and redshifts (frequency ratios).")
     src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "Pantheon 2018 (40 bins)"])
@@ -553,7 +553,7 @@ def page_flux():
 
 
 def page_time():
-    st.title("Time dilation")
+    st.title("Time dilation: how far light curves stretch")
     st.markdown("Transients carry their own clocks. The measured exponent b in (observed width / rest width) = (1+z)^b "
                 "gives the register Q_t = (1+z)^(b−1), which equals 1 at full stretch (b = 1).")
     view = st.sidebar.radio("Show", ["Exponent b", "Q_t(z) = (1+z)^(b−1)"])
@@ -591,7 +591,7 @@ def page_time():
 
 
 def page_ageing():
-    st.title("Ageing rate")
+    st.title("Ageing rate: galaxies as clocks across redshift")
     st.markdown("Passively ageing galaxies are clocks spread across redshift. Pairs of them give the change in redshift per "
                 "change in stellar age, |dz/dt|. The register divides it by the local rate, so Q = 1 would mean a steady rate.")
     za = st.sidebar.slider("Chronometers below this redshift set the local rate", 0.1, 0.5, 0.2, 0.05)
@@ -607,7 +607,7 @@ def page_ageing():
 
 
 def page_angle():
-    st.title("Acoustic angle")
+    st.title("Acoustic angle: the preferred angle between galaxy pairs")
     st.markdown("Galaxies prefer a fixed separation, which shows in a thin redshift slice as a preferred angle between pairs. "
                 "The register is Q = θ(z)·z / (θ(z_a)·z_a): with the ideal, an angle that shrinks as 1/z, Q stays at 1.")
     k = st.sidebar.selectbox("Anchor point", range(5), format_func=lambda i: f"z = {R.ANGLES['z'][i]}  ({R.ANGLES['source'][i]})")
@@ -630,7 +630,7 @@ def page_angle():
 
 
 def page_cusp():
-    st.title("Cusp flux ratio")
+    st.title("Cusp flux ratio: the brightness of lensed image triplets")
     st.markdown("When a lens splits one source into a tight triplet of images, a perfectly smooth lens would make the middle "
                 "image as bright as the two outer ones together, in the limit of a closed triplet. The register is "
                 "**Q = F_middle / (F_outer1 + F_outer2)**, from radio flux ratios.")
@@ -654,7 +654,7 @@ def page_cusp():
 
 
 def page_rotation():
-    st.title("Galaxy rotation")
+    st.title("Galaxy rotation: observed spin against visible matter")
     st.markdown("Q = g_obs / g_bar compares the rotation a galaxy shows with the rotation its visible matter alone would give. "
                 "Q = 1 would mean visible matter accounts for all of it.")
     ud = st.sidebar.slider("Disk mass-to-light ratio", 0.2, 1.0, 0.5, 0.05)
@@ -686,7 +686,7 @@ def page_rotation():
 
 
 def page_single():
-    st.title("Single-value registers")
+    st.title("Clock and deflection: two single-value registers")
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Clock")
@@ -1263,7 +1263,7 @@ PAGES = {
     "Sources": sources.page,
 }
 
-st.sidebar.title("FDG registers")
+st.sidebar.header("Registers")
 choice = st.sidebar.radio("Register", list(PAGES), label_visibility="collapsed")
 st.sidebar.divider()
 PAGES[choice]()
