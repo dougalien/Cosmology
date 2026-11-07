@@ -48,6 +48,12 @@ def pantheon_plus_register(zcol, lo0, lo1, nbins, full_cov):
     return R.flux_dimming_plus(t, cov, zcol=zcol, lo=(lo0, lo1), nbins=nbins)
 
 
+@st.cache_data(show_spinner="Loading DES 5-year supernovae…")
+def des_register(lo0, lo1, nbins):
+    t, cov = R.load_des5yr()
+    return R.flux_dimming_plus(t, cov, zcol="zHD", lo=(lo0, lo1), nbins=nbins)
+
+
 @st.cache_data
 def rotation_data(ud, ub, inc, qual):
     return R.rotation(ud, ub, inc, qual)
@@ -515,7 +521,8 @@ def page_flux():
     st.title("Flux dimming: how supernova light fades with redshift")
     st.markdown("Q = 10^((m − C)/5) / z: the dimming of supernova light divided by redshift, with the nearby supernovae "
                 "setting Q = 1. It is built from magnitudes (flux ratios) and redshifts (frequency ratios).")
-    src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "Pantheon 2018 (40 bins)"])
+    src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "DES 5-year (binned with covariance)",
+                                    "Pantheon 2018 (40 bins)"])
     fig = go.Figure()
     if src.startswith("Pantheon+"):
         full = st.sidebar.checkbox("Use full STAT+SYS covariance", value=R.pantheon_cov_available(),
@@ -530,6 +537,16 @@ def page_flux():
         if st.sidebar.checkbox("Overlay Pantheon 2018 bins", value=True):
             zq, Qb, _ = R.flux_dimming_binned()
             fig.add_trace(go.Scatter(x=zq, y=Qb, mode="markers", marker=dict(color="#6B7A82", size=5), name="Pantheon 2018 bins"))
+        if st.sidebar.checkbox("Overlay DES 5-year bins", value=True):
+            zd, Qd, sQd, *_ = des_register(lo[0], lo[1], nb)
+            fig.add_trace(errpts(zd, Qd, sQd, "DES 5-year (a second survey)", color=PALETTE[0], symbol="diamond"))
+    elif src.startswith("DES"):
+        lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
+        nb = st.sidebar.slider("Number of bins", 8, 30, 17)
+        zd, Qd, sQd, n, na, nt = des_register(lo[0], lo[1], nb)
+        fig.add_trace(errpts(zd, Qd, sQd, f"DES 5-year ({nt} supernovae, {na} nearby)", text=[f"n={k}" for k in n]))
+        st.caption("DES 5-year: 1,635 supernovae found by the Dark Energy Survey, with nearby supernovae from other surveys "
+                   "setting Q = 1. Its redshifts include the release's correction for local motions (zHD).")
     else:
         za = st.sidebar.slider("Bins below this redshift set Q = 1", 0.02, 0.1, 0.05, 0.005)
         zq, Qb, sQb = R.flux_dimming_binned(za)

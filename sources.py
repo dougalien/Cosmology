@@ -15,6 +15,12 @@ SOURCES = [
         ("Scolnic, D. M., et al. (2018). The complete light-curve sample of spectroscopically confirmed SNe Ia from Pan-STARRS1 and cosmological constraints from the combined Pantheon sample. *The Astrophysical Journal*, 859, 101. The 40 binned Pantheon points.",
          "https://doi.org/10.3847/1538-4357/aab9bb"),
     ]),
+    ("Flux dimming: DES 5-year", [
+        ("DES Collaboration (2024). The Dark Energy Survey: Cosmology results with ~1500 new high-redshift Type Ia supernovae using the full 5-year dataset. *The Astrophysical Journal Letters*, 973, L14.",
+         "https://doi.org/10.3847/2041-8213/ad6f9f"),
+        ("Popovic, B., et al. (2026). The Dark Energy Survey Supernova Program: A reanalysis of cosmology results with an updated Type Ia supernova calibration (DES-Dovekie). *Monthly Notices of the Royal Astronomical Society*. Data: DES-Dovekie_HD.csv and the STAT+SYS covariance, github.com/des-science/DES-SN5YR.",
+         "https://arxiv.org/abs/2511.07517"),
+    ]),
     ("Time dilation", [
         ("White, R. M. T., et al. (2024). The Dark Energy Survey Supernova Program: Slow supernovae show cosmological time dilation out to z ~ 1. *Monthly Notices of the Royal Astronomical Society*, 533, 3365–3378. Also the summary used for Goldhaber et al. (2001).",
          "https://doi.org/10.1093/mnras/stae2030"),
@@ -38,7 +44,7 @@ SOURCES = [
          "https://doi.org/10.1103/PhysRevD.93.023530"),
         ("de Carvalho, E., Bernui, A., Carvalho, G. C., Novaes, C. P., & Xavier, H. S. (2018). Angular baryon acoustic oscillation measure at z = 2.225 from the SDSS quasar survey. *Journal of Cosmology and Astroparticle Physics*, 2018(04), 064.",
          "https://doi.org/10.1088/1475-7516/2018/04/064"),
-        ("Avila, F., Bernui, A., Sabogal, M. A., & Nunes, R. C. (2025). Transverse BAO scale measurement at z_eff = 1.725 with the SDSS quasars catalog. arXiv:2510.15650.",
+        ("Avila, F., Bernui, A., Sabogal, M. A., & Nunes, R. C. (2025). High-redshift transverse BAO measurements with the SDSS quasar catalog. arXiv:2510.15650. θ = 1.911° ± 0.062° at z_eff = 1.725.",
          "https://arxiv.org/abs/2510.15650"),
         ("Planck Collaboration (2020). Planck 2018 results. I. Overview and the cosmological legacy of Planck. *Astronomy & Astrophysics*, 641, A1. Table 5: positions and amplitudes of the TT, TE and EE peaks and troughs.",
          "https://doi.org/10.1051/0004-6361/201833880"),
