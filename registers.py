@@ -1087,3 +1087,24 @@ PLASMA_VS_GAS = [
     ("Molecular cloud cores", (1e3, 1e5), (1e-5, 1e-2)),
     ("Diffuse molecular clouds", (1e2, 1e3), (0.01, 0.1)),
 ]
+
+
+def plasma_signal_q(f_over_fp):
+    """Exact signal (group) register in plasma: Q_c = sqrt(1 - (f_p/f)^2) above the cutoff, 0 at and below it."""
+    x = np.asarray(f_over_fp, float)
+    return np.where(x > 1, np.sqrt(np.clip(1 - 1 / x ** 2, 0, None)), 0.0)
+
+
+def plasma_crest_q(f_over_fp):
+    """Crest (phase) register in plasma: 1/n = 1/sqrt(1 - (f_p/f)^2), above 1; undefined below the cutoff."""
+    x = np.asarray(f_over_fp, float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.where(x > 1, 1 / np.sqrt(1 - 1 / x ** 2), np.nan)
+
+
+# Crest register 1/n across states of matter (visible light, 589 nm, except the plasma rows)
+CREST_ACROSS_STATES = [
+    ("Ice (solid)", 1 / 1.309, "refraction angle"),
+    ("Water (liquid)", 1 / 1.3330, "refraction angle"),
+    ("Air (gas)", 1 / 1.000293, "refraction angle"),
+]

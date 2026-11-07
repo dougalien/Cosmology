@@ -1285,7 +1285,71 @@ So plasma follows the energy supply, not the mass. The purple line is a calculat
 and an assumed cosmic-ray rate, set by the slider.
 """)
 
-    st.header("7. What plasma is not")
+    st.header("7. A register with two ideals: stopped and the vacuum limit")
+    st.markdown("""
+For a signal, Q_c runs between two ideals: **0, stopped**, and **1, the vacuum limit**. Neither is reached. Light has been
+"stopped" in cold atom clouds, but while it is stopped it has been handed to the atoms and is not there as light.
+
+Plasma spans the whole range in one form. Written in full, the signal register is **Q_c = √(1 − (f_p / f)²)**: what sets it
+is a ratio, the signal's frequency against the medium's own natural frequency, with no fixed number in it.
+""")
+    x = np.logspace(-0.5, 2, 600)
+    fig = go.Figure()
+    fig.add_vrect(x0=10 ** -0.5, x1=1, fillcolor=brand.SAND_TINT, line_width=0, opacity=1)
+    fig.add_annotation(x=-0.25, y=1.6, text="turned back:<br>no signal passes", showarrow=False, font=dict(color=BLACK))
+    fig.add_trace(go.Scatter(x=x, y=R.plasma_signal_q(x), mode="lines", name="signal (group) speed ÷ limit",
+                             line=dict(color=BLACK, width=3), hovertemplate="f/f_p %{x:.3g}<br>Q_c %{y:.6g}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=R.plasma_crest_q(x), mode="lines", name="crest (phase) speed ÷ limit",
+                             line=dict(color=PALETTE[0], width=2.5, dash="dot"), hovertemplate="f/f_p %{x:.3g}<br>crest %{y:.6g}<extra></extra>"))
+    ref_line(fig, 1.0, "ideal: vacuum limit, Q = 1")
+    ref_line(fig, 0.0, "ideal: stopped, Q = 0")
+    places = [(n, np.sqrt(lo * hi)) for n, lo, hi, _, k in R.PLASMA_LADDER if k == "measured"]
+    pr = [(n, f_ghz * 1e9 / (R.F_P_PER_SQRT_NE * np.sqrt(ne))) for n, ne in places]
+    pr = [(n, r) for n, r in pr if 10 ** -0.5 < r < 100]
+    if pr:
+        fig.add_trace(go.Scatter(x=[r for _, r in pr], y=R.plasma_signal_q([r for _, r in pr]), mode="markers", name=f"places at {f_ghz:g} GHz",
+                                 marker=dict(size=11, color=PALETTE[1], line=dict(width=1, color="white")), text=[n for n, _ in pr],
+                                 hovertemplate="%{text}<br>f/f_p %{x:.3g}<br>Q_c %{y:.4g}<extra></extra>"))
+    base_layout(fig, "signal frequency ÷ the medium's plasma frequency, f / f_p", "Q_c", xlog=True, height=480)
+    fig.update_yaxes(range=[-0.05, 2.2])
+    st.plotly_chart(fig, width="stretch")
+    st.markdown(f"""
+- **Far above the plasma frequency** Q_c sits close to 1: starlight crossing the Galaxy. At {f_ghz:g} GHz most places on the
+  ladder are off the right edge, millions of times above their plasma frequency. Lower the frequency slider to bring
+  them onto the curve.
+- **Down toward f_p** Q_c falls smoothly to 0, and **below it** the signal is turned back. This is a true boundary, and it
+  is measured every day: ionosondes sweep a radio frequency upward and read the layer's plasma frequency from where
+  the echo stops.
+- **The crests** run faster than the limit (dotted), and faster the closer they are to the cutoff. Only the signal
+  carries information, and it never passes 1.
+""")
+    st.subheader("Crossing states of matter")
+    rows = [dict(medium=n, state=n.split("(")[1].rstrip(")"), crest=q, side="below the limit", read=h) for n, q, h in R.CREST_ACROSS_STATES]
+    for n, lo, hi, _, k in R.PLASMA_LADDER:
+        if n in ("Warm ionized gas in the disk", "Earth's ionosphere, densest layer"):
+            ne = np.sqrt(lo * hi)
+            r = f_ghz * 1e9 / (R.F_P_PER_SQRT_NE * np.sqrt(ne))
+            q = float(R.plasma_crest_q(r))
+            rows.append(dict(medium=f"{n} at {f_ghz:g} GHz", state="plasma", crest=q,
+                             side="above the limit" if np.isfinite(q) else "turned back", read="radio timing and sounding"))
+    st.dataframe(pd.DataFrame(rows).rename(columns={"medium": "Medium", "state": "State", "crest": "Crest speed ÷ limit (1/n)",
+                                                    "side": "Side of the ideal", "read": "Read from"})
+                 .style.format({"Crest speed ÷ limit (1/n)": "{:.15g}"}, na_rep="—"), hide_index=True, width="stretch")
+    st.markdown("""
+In neutral matter, solid, liquid or gas, the crests run *slower* than the limit. In plasma they run *faster*, while the
+signal still runs slower. So ionizing a gas moves its crest register from one side of the vacuum ideal to the other:
+the states of matter sit on opposite sides of Q = 1. Freezing moves the register in a step too (water 0.750, ice 0.764).
+
+Every medium has natural frequencies of its own: its plasma frequency, and the frequencies its atoms absorb. The register
+changes character where the signal crosses one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
+At an absorption line the speed swings sharply. In a band gap (opals, photonic crystals) there is a forbidden range with
+Q_c falling toward 0 at its edges. A change of state moves those natural frequencies, so the boundaries move with it.
+
+*One caution:* right at an absorption line the group speed can read above 1, or negative; that has been measured. The
+front of a signal still never beats the limit, so the 0 to 1 bounds hold for the signal itself.
+""")
+
+    st.header("8. What plasma is not")
     st.markdown("""
 - **Not the old ether.** The ether was meant to carry all light the same way. Plasma treats every frequency differently:
   the lag goes as 1/frequency², measured from 40 MHz to 8 GHz in pulsars and in fast radio bursts. For visible light the
