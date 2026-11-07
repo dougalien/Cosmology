@@ -125,6 +125,7 @@ measured from here.
         ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
         ["Mass: a reading", "Sgr A*, M87*, NGC 5548, disk galaxies", "measured part only (no assumptions)", "each assumption in turn", "GRAVITY, EHT, reverberation, SPARC"],
         ["Light: departure from the vacuum limit", "Glass, plasma, light near mass, vacuum tests", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, pulsar timing, Cassini, GW170817"],
+        ["Plasma: the medium light crosses", "Free electrons on pulsar paths, from the ionosphere to between galaxies", "an empty path (the vacuum limit)", "radio frequency, direction, height", "ATNF pulsar lags, parallaxes, YMW16 map"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), hide_index=True, width="stretch")
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
@@ -1048,7 +1049,7 @@ The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart read
   Light crossing a cold atom cloud slowed to 17 m/s, and has been stopped altogether.
 - **Plasma** is everywhere in space, so radio signals always arrive late, and later at lower frequency (the lag goes as
   1/frequency²). Move the slider: the same gas departs 100 times more at 0.1 GHz than at 1 GHz. Space between the
-  stars is not a vacuum; its departure is about 10⁻¹² at 1 GHz.
+  stars is not a vacuum; its departure is about 10⁻¹² at 1 GHz. The *Plasma* page maps where it is.
 - **Near mass** light takes longer to cross, read as the extra Cassini delay past the Sun. Spread over the path, that is a
   departure of a few parts in a million at the Sun's edge. It is the same reading as the *Gravity: departure from G*
   page, seen from the light side. Measured locally the departure is zero, because the clock slows with the light.
@@ -1107,6 +1108,264 @@ nature; it was chosen as the best limit known, and kept fixed so that everything
                "The pulsar rows need a distance to turn the measured lag into a density: parallax for J0437−4715, about 2 kpc for the Crab. "
                "The near-mass rows spread the delay over the path in the usual (isotropic) coordinates, so they depend on that choice; "
                "the delay itself is a time. GW170817 and GRB 090510 need a travel time, which comes from a distance or a redshift.")
+
+
+PLASMA_SCALE = [[0.0, "#F7F1E6"], [0.35, brand.SAND], [0.7, brand.RUST], [1.0, "#4A2412"]]
+
+
+def page_plasma():
+    st.title("Plasma: the medium light crosses")
+    st.markdown("""
+Space between the stars is not empty. Every path a radio signal has been timed along holds free electrons, so the
+emptiest "vacuum" anyone has measured is a very thin plasma. Plasma is a real medium for light, and it can be mapped.
+
+The register is the one from the *Light* page, read along a path: **Q_c = signal speed ÷ the vacuum limit**. In plasma a
+signal at frequency f runs at Q_c = 1 − ½(f_p / f)², where f_p, the plasma frequency, grows as the square root of the
+electron density. So the departure **1 − Q_c grows with the density and falls with the square of the frequency**.
+
+What is measured is a time. A pulsar's pulse arrives later at low radio frequency than at high frequency, and the size of
+that lag is the **dispersion measure (DM)**: the number of free electrons along the whole path in a column one square
+centimetre across. It needs no distance.
+""")
+    f_ghz = st.sidebar.select_slider("Radio frequency (GHz)", options=[0.1, 0.2, 0.4, 0.7, 1.0, 1.4, 2.0, 4.0, 8.0], value=1.0,
+                                     key="plasma_f")
+    p = R.pulsars()
+    gal = ~np.isin(p["where"], ["LMC", "SMC"])
+
+    st.header("1. The plasma column on the sky")
+    o = np.argsort(p["dm"])
+    l180 = np.where(p["l"] > 180, p["l"] - 360, p["l"])
+    fig = go.Figure(go.Scattergl(
+        x=l180[o], y=p["b"][o], mode="markers", text=p["name"][o], customdata=np.c_[p["dm"][o], p["where"][o]],
+        marker=dict(size=5, color=np.log10(p["dm"][o]), colorscale=PLASMA_SCALE, cmin=0.5, cmax=3.2,
+                    colorbar=dict(title="log₁₀ DM", thickness=14)),
+        hovertemplate="%{text}<br>DM %{customdata[0]} pc/cm³<br>%{customdata[1]}<extra></extra>"))
+    base_layout(fig, "Galactic longitude (degrees)", "Galactic latitude (degrees)", height=480)
+    fig.update_xaxes(range=[180, -180], dtick=60)
+    fig.update_yaxes(range=[-90, 90], dtick=30)
+    st.plotly_chart(fig, width="stretch")
+    n_mc = int((~gal).sum())
+    st.markdown(f"""
+{len(p['dm']):,} pulsars, each placed by its direction alone and coloured by its measured lag. The plasma is piled into the
+plane of the Galaxy. The two clumps lower right are {n_mc} pulsars in the Large and Small Magellanic Clouds: their
+signals cross our Galaxy's plasma and then another galaxy's.
+""")
+
+    st.header("2. The layer has a top")
+    s = p["dm"] * np.abs(np.sin(np.radians(p["b"])))
+    ceil, ceil_err, n_used = R.plasma_layer_ceiling()
+    fig = go.Figure()
+    for where, col in [("field", PALETTE[0]), ("globular cluster", PALETTE[5]), ("LMC", "#9AA5AB"), ("SMC", "#9AA5AB")]:
+        k = p["where"] == where
+        fig.add_trace(go.Scattergl(x=np.abs(p["b"][k]), y=s[k], mode="markers", name=where if where != "SMC" else "SMC",
+                                   marker=dict(size=6, color=col, opacity=0.7, symbol="circle" if where in ("field", "globular cluster") else "diamond"),
+                                   text=p["name"][k], hovertemplate="%{text}<br>|b| %{x:.1f}°<br>DM sin|b| %{y:.1f}<extra></extra>"))
+    fig.add_hline(opacity=1, y=ceil, line=dict(color=REF, dash="dash", width=1.5),
+                  annotation_text=f"ceiling {ceil:.1f} ± {ceil_err:.1f} pc/cm³", annotation_position="top right")
+    base_layout(fig, "angle above or below the Galactic plane, |b| (degrees)", "DM × sin|b| (column straight out of the disk, pc/cm³)",
+                ylog=True, height=460)
+    fig.update_yaxes(range=[-0.5, 2.6])
+    st.plotly_chart(fig, width="stretch")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Column straight out of the disk", f"{ceil:.1f} pc/cm³", f"median of {n_used} pulsars above 40°", delta_color="off")
+    c2.metric(f"Lag it adds at {f_ghz:g} GHz", f"{R.DM_DELAY_S * ceil / f_ghz ** 2 * 1e3:.0f} ms", "a timing, no distance", delta_color="off")
+    c3.metric("Read from", "angles and timing", "no distance used", delta_color="off")
+    st.markdown("""
+Tilting the line of sight by the angle b lengthens a path through a flat layer by 1/sin|b|. Multiplying the lag by sin|b|
+undoes that tilt, so the result is the column straight up out of the disk. Close to the plane it keeps growing, because
+those pulsars sit inside the layer. Higher up it stops growing: the pulsars are now above the plasma, and the whole layer is
+behind them. The level it stops at is the thickness of the plasma, counted in electrons. Points well above the line at
+25–45° are the Magellanic Clouds, which add a second galaxy's plasma.
+""")
+
+    st.header("3. Density along paths with a parallax")
+    d = R.parallax_path_densities()
+    dep = R.plasma_departure(d["n_e"], f_ghz)
+    fig = go.Figure(go.Scatter(
+        x=d["z"], y=d["n_e"], mode="markers", error_y=dict(type="data", array=d["n_e_err"], color="#9AA5AB", thickness=1),
+        marker=dict(size=9, color=PALETTE[1]), text=d["name"], customdata=np.c_[d["distance"], d["dm"], dep],
+        hovertemplate="%{text}<br>distance %{customdata[0]:.0f} pc (parallax)<br>DM %{customdata[1]:.3g}<br>"
+                      "mean n_e %{y:.3g} /cm³<br>1 − Q_c %{customdata[2]:.2g}<extra></extra>"))
+    base_layout(fig, "height above the Galactic plane, |z| (pc, from parallax)", "mean electron density on the path, DM ÷ distance (per cm³)",
+                xlog=True, ylog=True, height=460)
+    st.plotly_chart(fig, width="stretch")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Paths", f"{len(d['n_e'])}", "parallax better than 3σ", delta_color="off")
+    c2.metric("Typical density", f"{np.median(d['n_e']):.3f} /cm³", f"range {d['n_e'].min():.3f} to {d['n_e'].max():.2f}", delta_color="off")
+    c3.metric(f"Typical 1 − Q_c at {f_ghz:g} GHz", f"{np.median(dep):.1e}", "for visible light about 10¹¹ times smaller", delta_color="off")
+    st.markdown("""
+The parallax is an angle measured within the Galaxy, so these are the only paths with a length that is not itself a
+calculation from a model. About one free electron in every 60 cubic centimetres is typical. Paths that rise higher out of
+the plane average lower, as they should if the layer thins with height.
+""")
+
+    st.header("4. The contour map")
+    g = R.ymw16_slices()
+    levels = dict(start=-4, end=0.5, size=0.5)
+    fig = make_subplots(rows=1, cols=2, column_widths=[0.45, 0.55], horizontal_spacing=0.09,
+                        subplot_titles=("Seen from above (mid-plane)", "Seen edge-on (through the Sun and the centre)"))
+    fig.add_trace(go.Contour(x=g["face_x_pc"] / 1000, y=g["face_y_pc"] / 1000, z=g["face_log10_ne"], contours=levels,
+                             colorscale=PLASMA_SCALE, zmin=-4, zmax=0.5, line=dict(width=0.4, color=BLACK),
+                             colorbar=dict(title="log₁₀ n_e", thickness=14),
+                             hovertemplate="x %{x:.1f} kpc, y %{y:.1f} kpc<br>log₁₀ n_e %{z:.2f}<extra></extra>"), 1, 1)
+    fig.add_trace(go.Contour(x=g["edge_y_pc"] / 1000, y=g["edge_z_pc"] / 1000, z=g["edge_log10_ne"], contours=levels,
+                             colorscale=PLASMA_SCALE, zmin=-4, zmax=0.5, line=dict(width=0.4, color=BLACK), showscale=False,
+                             hovertemplate="along %{x:.1f} kpc, height %{y:.2f} kpc<br>log₁₀ n_e %{z:.2f}<extra></extra>"), 1, 2)
+    for r_, c_, x0, y0 in [(1, 1, 0, 8.3), (1, 2, 8.3, 0)]:
+        fig.add_trace(go.Scatter(x=[x0], y=[y0], mode="markers+text", text=["Sun"], textposition="top center", showlegend=False,
+                                 marker=dict(symbol="star", size=14, color=PALETTE[5], line=dict(width=1, color="white"))), r_, c_)
+    fig.update_xaxes(title="kpc", row=1, col=1); fig.update_yaxes(title="kpc", scaleanchor="x", row=1, col=1)
+    fig.update_xaxes(title="kpc along the Sun–centre line", row=1, col=2); fig.update_yaxes(title="height (kpc)", row=1, col=2)
+    fig.update_layout(height=520, template="simple_white", margin=dict(l=60, r=20, t=50, b=50))
+    st.plotly_chart(fig, width="stretch")
+    st.markdown("""
+This is the YMW16 map of the Galaxy's free electrons. Seen from above, the spiral arms carry the densest plasma. Seen
+edge-on, it is a flattened disk one to two kiloparsecs thick, the layer whose top shows in section 2.
+
+**What this map is.** It is a model fitted to the lags of sections 1–3 together with pulsar distances from parallax and
+from the clusters and remnants pulsars sit in. The smooth parts (a thick disk, a thin disk, spiral arms, the Local Bubble,
+the Gum Nebula) are shapes the modellers chose. So the map is a reading built on distances and assumed shapes; sections
+1 and 2 are the measured part it rests on.
+""")
+
+    st.header("5. From the thinnest plasma to the densest")
+    lad = R.PLASMA_LADDER
+    cut = R.plasma_cutoff_ne(f_ghz)
+    fig = go.Figure()
+    for i, (name, lo, hi, how, kind) in enumerate(lad):
+        col = "#9AA5AB" if kind == "calculated" else PALETTE[0]
+        fig.add_trace(go.Scatter(x=[lo, hi], y=[name, name], mode="lines", line=dict(color=col, width=12), showlegend=False,
+                                 customdata=[[how, R.plasma_departure(lo, f_ghz), R.plasma_departure(hi, f_ghz)]] * 2,
+                                 hovertemplate=f"{name}<br>n_e %{{x:.2g}} /cm³<br>1 − Q_c at {f_ghz:g} GHz: "
+                                               "%{customdata[1]:.2g} to %{customdata[2]:.2g}<br>%{customdata[0]}<extra></extra>"))
+    fig.add_vline(opacity=1, x=cut, line=dict(color=REF, dash="dash", width=1.5),
+                  annotation_text=f"a {f_ghz:g} GHz signal cannot pass beyond here", annotation_position="bottom left")
+    base_layout(fig, "free electron density, n_e (per cm³)", "", xlog=True, height=500)
+    fig.update_xaxes(range=[-7.5, 10.5], dtick=1, exponentformat="power")
+    fig.update_yaxes(type="category", autorange="reversed", categoryorder="array", categoryarray=[r[0] for r in lad])
+    st.plotly_chart(fig, width="stretch")
+    rows = [dict(place=n, n_e=f"{lo:.0e} – {hi:.0e}", departure=f"{R.plasma_departure(lo, f_ghz):.1e} – {R.plasma_departure(hi, f_ghz):.1e}"
+                 if hi < cut else "does not pass", how=h, kind=k) for n, lo, hi, h, k in lad]
+    st.markdown(f"""
+Sixteen decades of density, and every one measured except the first. Between galaxies the density comes from
+fast radio bursts, but turning their lag into a density needs a distance from redshift, so it is shown in grey. At
+{f_ghz:g} GHz the departures run from about 10⁻¹⁷ to 10⁻², and to the right of the dashed line the plasma frequency is
+higher than the signal's, so the signal is turned back rather than slowed. That is why the ionosphere reflects
+short-wave radio.
+""")
+    st.dataframe(pd.DataFrame(rows).rename(columns={"place": "Place", "n_e": "n_e (per cm³)", "departure": f"1 − Q_c at {f_ghz:g} GHz",
+                                                    "how": "How the density is read", "kind": "Kind"}), hide_index=True, width="stretch")
+
+    st.header("6. Plasma does not follow the mass")
+    zeta = st.select_slider("Cosmic-ray ionization rate per molecule (assumed, per second)", options=[1e-17, 3e-17, 1e-16],
+                            value=1e-17, format_func=lambda v: f"{v:.0e}")
+    ng = np.logspace(-2, 6, 200)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=ng, y=ng, mode="lines", name="every atom ionized (n_e = n_gas)", line=dict(color=REF, dash="dash", width=1.5)))
+    fig.add_trace(go.Scatter(x=ng, y=R.cosmic_ray_balance_ne(ng, zeta), mode="lines", name="only cosmic rays ionize (calculated)",
+                             line=dict(color=PALETTE[2], width=2.5)))
+    for i, (name, (g0, g1), (e0, e1)) in enumerate(R.PLASMA_VS_GAS):
+        fig.add_trace(go.Scatter(x=[g0, g1, g1, g0, g0], y=[e0, e0, e1, e1, e0], fill="toself", mode="lines", name=name + " (measured)",
+                                 line=dict(color=PALETTE[[0, 3, 1, 4][i]], width=2), opacity=0.55))
+    base_layout(fig, "gas density, atoms or molecules per cm³", "free electron density, n_e (per cm³)", xlog=True, ylog=True, height=500)
+    fig.update_xaxes(exponentformat="power"); fig.update_yaxes(exponentformat="power", range=[-6, 6])
+    st.plotly_chart(fig, width="stretch")
+    st.markdown("""
+The densest gas in the Galaxy holds some of its thinnest plasma. A cold molecular cloud core has ten thousand times more
+gas than the warm ionized medium, yet fewer free electrons. The plasma is not hidden inside under a cold crust: radio
+passes straight through clouds and the pulsar lag counts every free electron on the path, and no pulsar shows the lag a
+fully ionized cloud would add (crossing one parsec of a core would add about 20,000; the largest measured anywhere is 1,778).
+The ionized gas sits on the *outside*, as thin skins on cloud faces lit by nearby stars, such as the Orion Bar.
+
+The pattern is a balance. Gas stays ionized only while something keeps knocking electrons off (starlight, cosmic rays,
+heat), and electrons recombine faster where the gas is denser. Starlight is used up in the outer skin; only cosmic rays
+reach the inside. Balancing the two gives electrons that grow as the **square root** of the gas density, the purple line.
+Where something powerful keeps every atom ionized, as in HII regions around hot stars, plasma follows the gas one for one.
+So plasma follows the energy supply, not the mass. The purple line is a calculation: it uses laboratory recombination rates
+and an assumed cosmic-ray rate, set by the slider.
+""")
+
+    st.header("7. A register with two ideals: stopped and the vacuum limit")
+    st.markdown("""
+For a signal, Q_c runs between two ideals: **0, stopped**, and **1, the vacuum limit**. Neither is reached. Light has been
+"stopped" in cold atom clouds, but while it is stopped it has been handed to the atoms and is not there as light.
+
+Plasma spans the whole range in one form. Written in full, the signal register is **Q_c = √(1 − (f_p / f)²)**: what sets it
+is a ratio, the signal's frequency against the medium's own natural frequency, with no fixed number in it.
+""")
+    x = np.logspace(-0.5, 2, 600)
+    fig = go.Figure()
+    fig.add_vrect(x0=10 ** -0.5, x1=1, fillcolor=brand.SAND_TINT, line_width=0, opacity=1)
+    fig.add_annotation(x=-0.25, y=1.6, text="turned back:<br>no signal passes", showarrow=False, font=dict(color=BLACK))
+    fig.add_trace(go.Scatter(x=x, y=R.plasma_signal_q(x), mode="lines", name="signal (group) speed ÷ limit",
+                             line=dict(color=BLACK, width=3), hovertemplate="f/f_p %{x:.3g}<br>Q_c %{y:.6g}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=R.plasma_crest_q(x), mode="lines", name="crest (phase) speed ÷ limit",
+                             line=dict(color=PALETTE[0], width=2.5, dash="dot"), hovertemplate="f/f_p %{x:.3g}<br>crest %{y:.6g}<extra></extra>"))
+    ref_line(fig, 1.0, "ideal: vacuum limit, Q = 1")
+    ref_line(fig, 0.0, "ideal: stopped, Q = 0")
+    places = [(n, np.sqrt(lo * hi)) for n, lo, hi, _, k in R.PLASMA_LADDER if k == "measured"]
+    pr = [(n, f_ghz * 1e9 / (R.F_P_PER_SQRT_NE * np.sqrt(ne))) for n, ne in places]
+    pr = [(n, r) for n, r in pr if 10 ** -0.5 < r < 100]
+    if pr:
+        fig.add_trace(go.Scatter(x=[r for _, r in pr], y=R.plasma_signal_q([r for _, r in pr]), mode="markers", name=f"places at {f_ghz:g} GHz",
+                                 marker=dict(size=11, color=PALETTE[1], line=dict(width=1, color="white")), text=[n for n, _ in pr],
+                                 hovertemplate="%{text}<br>f/f_p %{x:.3g}<br>Q_c %{y:.4g}<extra></extra>"))
+    base_layout(fig, "signal frequency ÷ the medium's plasma frequency, f / f_p", "Q_c", xlog=True, height=480)
+    fig.update_yaxes(range=[-0.05, 2.2])
+    st.plotly_chart(fig, width="stretch")
+    st.markdown(f"""
+- **Far above the plasma frequency** Q_c sits close to 1: starlight crossing the Galaxy. At {f_ghz:g} GHz most places on the
+  ladder are off the right edge, millions of times above their plasma frequency. Lower the frequency slider to bring
+  them onto the curve.
+- **Down toward f_p** Q_c falls smoothly to 0, and **below it** the signal is turned back. This is a true boundary, and it
+  is measured every day: ionosondes sweep a radio frequency upward and read the layer's plasma frequency from where
+  the echo stops.
+- **The crests** run faster than the limit (dotted), and faster the closer they are to the cutoff. Only the signal
+  carries information, and it never passes 1.
+""")
+    st.subheader("Crossing states of matter")
+    rows = [dict(medium=n, state=n.split("(")[1].rstrip(")"), crest=q, side="below the limit", read=h) for n, q, h in R.CREST_ACROSS_STATES]
+    for n, lo, hi, _, k in R.PLASMA_LADDER:
+        if n in ("Warm ionized gas in the disk", "Earth's ionosphere, densest layer"):
+            ne = np.sqrt(lo * hi)
+            r = f_ghz * 1e9 / (R.F_P_PER_SQRT_NE * np.sqrt(ne))
+            q = float(R.plasma_crest_q(r))
+            rows.append(dict(medium=f"{n} at {f_ghz:g} GHz", state="plasma", crest=q,
+                             side="above the limit" if np.isfinite(q) else "turned back", read="radio timing and sounding"))
+    st.dataframe(pd.DataFrame(rows).rename(columns={"medium": "Medium", "state": "State", "crest": "Crest speed ÷ limit (1/n)",
+                                                    "side": "Side of the ideal", "read": "Read from"})
+                 .style.format({"Crest speed ÷ limit (1/n)": "{:.15g}"}, na_rep="—"), hide_index=True, width="stretch")
+    st.markdown("""
+In neutral matter, solid, liquid or gas, the crests run *slower* than the limit. In plasma they run *faster*, while the
+signal still runs slower. So ionizing a gas moves its crest register from one side of the vacuum ideal to the other:
+the states of matter sit on opposite sides of Q = 1. Freezing moves the register in a step too (water 0.750, ice 0.764).
+
+Every medium has natural frequencies of its own: its plasma frequency, and the frequencies its atoms absorb. The register
+changes character where the signal crosses one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
+At an absorption line the speed swings sharply. In a band gap (opals, photonic crystals) there is a forbidden range with
+Q_c falling toward 0 at its edges. A change of state moves those natural frequencies, so the boundaries move with it.
+
+*One caution:* right at an absorption line the group speed can read above 1, or negative; that has been measured. The
+front of a signal still never beats the limit, so the 0 to 1 bounds hold for the signal itself.
+""")
+
+    st.header("8. What plasma is not")
+    st.markdown("""
+- **Not the old ether.** The ether was meant to carry all light the same way. Plasma treats every frequency differently:
+  the lag goes as 1/frequency², measured from 40 MHz to 8 GHz in pulsars and in fast radio bursts. For visible light the
+  departure is about 10¹¹ times smaller than at 1 GHz, so starlight crosses the Galaxy as if the plasma were not there.
+- **Not the cause of light slowing near mass.** Cassini timed the Sun's delay in two radio bands at once. The plasma part
+  changed with frequency as 1/f² and was subtracted; the part from the Sun's mass was the same in both bands. The two
+  departures are separate in the measurements (see *Gravity: departure from G* and *Light*).
+- **Not a fixed frame.** The plasma moves: the solar wind blows outward at 400 km/s, the Galaxy's gas turns with the disk.
+  Like everything else here, it is one more thing moving relative to everything else.
+
+As everywhere in FDG, the vacuum limit is an ideal. Plasma is one of the measured reasons nothing reaches it: no path
+anyone has timed is empty.
+""")
+    st.caption("Pulsar lags: ATNF Pulsar Catalogue v1.59. Parallax densities use D = 1/parallax and leave out globular-cluster "
+               "pulsars. The map: YMW16, evaluated with pygedm (Price et al. 2021) and stored as two slices. "
+               "Plasma departures use the signal (group) speed, c(1 − f_p²/2f²), with f_p = 8.98 kHz × √(electrons per cm³).")
 
 
 def page_motion():
@@ -1259,6 +1518,7 @@ PAGES = {
     "Gravity: departure from G": page_gravity,
     "Mass: a reading": page_mass,
     "Light: departure from the vacuum limit": page_light_speed,
+    "Plasma: the medium light crosses": page_plasma,
     "No fixed point": page_motion,
     "Sources": sources.page,
 }
