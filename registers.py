@@ -499,26 +499,32 @@ def crater_bins(body):
 
 # ----------------------------------------------------------------- shared-shape check
 def power_fit(x, Q, s):
-    """Fit Q = x^p through Q = 1 at x = 1 (straight line through the origin in log-log).
+    """Fit Q = A x^p, a straight line in log-log with slope p.
 
-    Returns p, its error, chi-square and the number of points. Errors are propagated to ln Q.
+    Each register is set to 1 by its nearby population, which sits a little above z = 0, so the start A is fitted
+    with the data rather than fixed at 1. Returns p, its error, chi-square, the number of points, and ln A.
+    Errors are propagated to ln Q.
     """
     lx, ly, sy = np.log(x), np.log(Q), s / Q
     w = 1 / sy ** 2
-    p = np.sum(w * lx * ly) / np.sum(w * lx * lx)
-    ep = 1 / np.sqrt(np.sum(w * lx * lx))
-    chi2 = float(np.sum(((ly - p * lx) / sy) ** 2))
-    return float(p), float(ep), chi2, len(x)
+    X = np.c_[np.ones_like(lx), lx]
+    A = X.T @ (w[:, None] * X)
+    b = np.linalg.solve(A, X.T @ (w * ly))
+    cov = np.linalg.inv(A)
+    chi2 = float(np.sum(((ly - X @ b) / sy) ** 2))
+    return float(b[1]), float(np.sqrt(cov[1, 1])), chi2, len(x), float(b[0])
 
 
 def common_power_test(sets):
-    """One exponent for every register at once: chi-square of the joint fit and its degrees of freedom."""
+    """One exponent for every register at once, each with its own start: chi-square and degrees of freedom."""
     lx = np.concatenate([np.log(x) for x, _, _ in sets])
     ly = np.concatenate([np.log(Q) for _, Q, _ in sets])
     sy = np.concatenate([s / Q for _, Q, s in sets])
+    grp = np.concatenate([np.full(len(x), i) for i, (x, _, _) in enumerate(sets)])
+    X = np.c_[lx, (grp[:, None] == np.arange(len(sets))).astype(float)]
     w = 1 / sy ** 2
-    p = np.sum(w * lx * ly) / np.sum(w * lx * lx)
-    return float(p), float(np.sum(((ly - p * lx) / sy) ** 2)), len(lx) - 1
+    b = np.linalg.solve(X.T @ (w[:, None] * X), X.T @ (w * ly))
+    return float(b[0]), float(np.sum(((ly - X @ b) / sy) ** 2)), len(lx) - X.shape[1]
 
 
 # ----------------------------------------------------------------- relative motion (no fixed point)

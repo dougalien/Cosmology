@@ -276,21 +276,23 @@ def page_same_shape():
     st.title("Do the registers share one shape?")
     st.markdown(
         "Each redshift register is set to Q = 1 by the nearby population, so its departure from the ideal is zero by "
-        "construction at z = 0. Read from far to near, the departure shrinks toward zero as the light's path to us shortens. "
+        "construction for nearby light. Read from far to near, the departure shrinks toward zero as the light's path to us shortens. "
         "That is the same pattern as the shape registers, where the departure shrinks toward zero as a body gains faces; "
         "in both cases the zero point is a limit (a path of zero length, infinitely many faces).\n\n"
         "To test whether the registers share a shape, plot them against **1 + z** on log–log axes. If a register is a power "
-        "of (1 + z), Q = (1 + z)^p, its departure ln Q = p · ln(1 + z) falls on a straight line that runs down to zero at "
-        "z = 0, and p measures how quickly the departure grows with path. The same shape with a different strength gives "
-        "straight lines with different slopes."
+        "of (1 + z), Q = A (1 + z)^p, its departure falls on a straight line, and p measures how quickly the departure grows "
+        "with path. The start A is read from the data: each register is set to 1 by its nearby population, which sits a "
+        "little beyond z = 0, so A is close to but not exactly 1. The same shape with a different strength gives straight "
+        "lines with different slopes."
     )
     zf, Qf, sf, *_ = pantheon_plus_register("zCMB", 0.015, 0.06, 17, R.pantheon_cov_available())
     za, Qa, sa, *_ = R.ageing(True)
-    zg, Qg, sg = R.acoustic_angle()
+    zg, Qg, _ = R.acoustic_angle()
+    sg = Qg * R.ANGLES["err"] / R.ANGLES["theta"]  # each angle's own error; the start is fitted, so the anchor needs none
     sets = {
         "Flux dimming": (1 + zf, Qf, sf),
         "Ageing rate": (1 + za, Qa, sa),
-        "Acoustic angle": (1 + zg[1:], Qg[1:], sg[1:]),  # the anchor point is Q = 1 by construction
+        "Acoustic angle": (1 + zg, Qg, sg),
     }
     des = next(d for d in R.time_dilation() if d["study"].startswith("White"))
     fits = {k: R.power_fit(*v) for k, v in sets.items()}
@@ -300,9 +302,9 @@ def page_same_shape():
         fig = go.Figure()
         xx = np.geomspace(1, 3.3, 50)
         for i, (k, (x, Q, s)) in enumerate(sets.items()):
-            p = fits[k][0]
+            p, lnA = fits[k][0], fits[k][4]
             fig.add_trace(errpts(x, Q, s, k, PALETTE[i]))
-            fig.add_trace(go.Scatter(x=xx, y=xx ** p, mode="lines", line=dict(color=PALETTE[i], width=1.5), name=f"(1+z)^{p:.2f}"))
+            fig.add_trace(go.Scatter(x=xx, y=np.exp(lnA) * xx ** p, mode="lines", line=dict(color=PALETTE[i], width=1.5), name=f"(1+z)^{p:.2f}"))
         p_t = des["b"] - 1
         xt = np.geomspace(1 + des["zmin"], 1 + des["zmax"], 20)
         fig.add_trace(go.Scatter(x=xt, y=xt ** p_t, mode="lines", line=dict(color=PALETTE[3], width=3),
@@ -314,36 +316,38 @@ def page_same_shape():
     with c2:
         fig = go.Figure()
         for i, (k, (x, Q, s)) in enumerate(sets.items()):
-            p = fits[k][0]
-            fig.add_trace(go.Scatter(x=np.log(x), y=np.log(Q) / p, mode="markers", name=k, marker=dict(size=7, color=PALETTE[i]),
+            p, lnA = fits[k][0], fits[k][4]
+            fig.add_trace(go.Scatter(x=np.log(x), y=(np.log(Q) - lnA) / p, mode="markers", name=k, marker=dict(size=7, color=PALETTE[i]),
                                      error_y=dict(type="data", array=s / Q / p, thickness=1)))
         ll = np.linspace(0, 1.2, 10)
         fig.add_trace(go.Scatter(x=ll, y=ll, mode="lines", line=dict(color=BLACK, dash="dot"), name="one shared shape"))
-        base_layout(fig, "ln(1 + z)", "ln Q ÷ p", height=500)
+        base_layout(fig, "ln(1 + z)", "(ln Q − ln A) ÷ p", height=500)
         st.plotly_chart(fig, width="stretch")
-        st.caption("The same data with each register divided by its own strength p. If they share one shape they collapse "
-                   "onto the dotted line.")
+        st.caption("The same data with each register measured from its own start and divided by its own strength p. If they "
+                   "share one shape they collapse onto the dotted line.")
 
-    rows = [dict(register=k, exponent_p=v[0], error=v[1], chi2=v[2], points=v[3], chi2_per_dof=v[2] / max(v[3] - 1, 1))
-            for k, v in fits.items()]
-    rows.append(dict(register="Time dilation (DES)", exponent_p=des["b"] - 1, error=des["err"], chi2=np.nan, points=1, chi2_per_dof=np.nan))
-    st.dataframe(pd.DataFrame(rows).style.format({"exponent_p": "{:.3f}", "error": "{:.3f}", "chi2": "{:.1f}",
+    rows = [dict(register=k, exponent_p=v[0], error=v[1], start_A=np.exp(v[4]), chi2=v[2], points=v[3],
+                 chi2_per_dof=v[2] / max(v[3] - 2, 1)) for k, v in fits.items()]
+    rows.append(dict(register="Time dilation (DES)", exponent_p=des["b"] - 1, error=des["err"], start_A=np.nan, chi2=np.nan,
+                     points=1, chi2_per_dof=np.nan))
+    st.dataframe(pd.DataFrame(rows).style.format({"exponent_p": "{:.3f}", "error": "{:.3f}", "start_A": "{:.3f}", "chi2": "{:.1f}",
                                                   "chi2_per_dof": "{:.2f}"}, na_rep="—"), hide_index=True, width="stretch")
     pc, chi_c, dof_c = R.common_power_test(list(sets.values()))
     (pf, ef, *_), (pa, ea, *_), (pg, eg, *_) = fits["Flux dimming"], fits["Ageing rate"], fits["Acoustic angle"]
     sig_fg = abs(pf - pg) / np.hypot(ef, eg)
+    fit_note = lambda k: ("fits within its errors" if fits[k][2] / max(fits[k][3] - 2, 1) < 1.5
+                          else "follows the trend with more scatter than its quoted errors")
     st.markdown(f"""
 **What the check says**
 
-- **Same form.** Each redshift register is close to a power of (1 + z). Flux dimming and the acoustic angle fit within
-  their errors. The ageing rate follows the same trend with more scatter than its quoted errors, which leave out the
-  correlated chronometer uncertainties.
-- **Different strength.** Forcing one exponent on all three gives p = {pc:.2f} with χ² = {chi_c:.0f} for {dof_c} degrees of
-  freedom, so one shared strength is ruled out. In order: time dilation p = {des['b'] - 1:.3f} (it stays at its ideal),
-  acoustic angle p = {pg:.2f}, flux dimming p = {pf:.2f} (these two differ by {sig_fg:.1f}σ), ageing rate p = {pa:.2f}
-  (about {pa / pf:.1f} times flux dimming).
-- So the registers look alike because they share a form: each departure falls smoothly toward zero as the light's path
-  shortens, along a power of (1 + z), with each population at its own rate.
+- **Same form.** Each redshift register is close to a power of (1 + z). Flux dimming {fit_note("Flux dimming")}, the
+  acoustic angle {fit_note("Acoustic angle")}, and the ageing rate {fit_note("Ageing rate")}.
+- **Different strength.** Forcing one exponent on all three (each with its own start) gives p = {pc:.2f} with
+  χ² = {chi_c:.0f} for {dof_c} degrees of freedom, so one shared strength is ruled out. In order: time dilation
+  p = {des['b'] - 1:.3f} (it stays at its ideal), acoustic angle p = {pg:.2f} ± {eg:.2f}, flux dimming p = {pf:.2f} ± {ef:.2f}
+  (these two differ by {sig_fg:.1f}σ), ageing rate p = {pa:.2f} ± {ea:.2f} (about {pa / pf:.1f} times flux dimming).
+- So the registers look alike because they share a form: each departure falls smoothly as the light's path shortens,
+  along a power of (1 + z), with each population at its own rate.
 - **At the far end the data do not show the departure turning back toward zero.** The largest departures are at the
   highest redshifts. The last three flux-dimming bins (z ≈ 1.0 to 1.6) sit level near Q ≈ 1.65, which may be the first
   sign of the departure levelling off rather than continuing to grow; more supernovae beyond z ≈ 1.5 would settle it.
@@ -354,10 +358,12 @@ def page_same_shape():
     st.markdown("If the two exponents add to 1, then multiplying the two registers gives back the frequency ratio itself: "
                 "**Q_flux × Q_angle = 1 + z**. That ties how bright supernovae look to how large galaxy-pair angles look, "
                 "using redshift alone.")
-    zg1, Qg1, sg1 = zg[1:], Qg[1:], sg[1:]
+    lnAf, lnAg = fits["Flux dimming"][4], fits["Acoustic angle"][4]
+    zg1, Qg1, sg1 = zg, Qg / np.exp(lnAg), sg / np.exp(lnAg)
     inside = zg1 <= zf.max()
-    # flux register at the angle redshifts: read from the bins where they overlap, from its power law beyond them
-    Qf_at = np.where(inside, np.exp(np.interp(np.log1p(zg1), np.log1p(zf), np.log(Qf))), (1 + zg1) ** pf)
+    # each register read from its own fitted start; flux at the angle redshifts from its bins where they overlap,
+    # from its power law beyond them
+    Qf_at = np.where(inside, np.exp(np.interp(np.log1p(zg1), np.log1p(zf), np.log(Qf)) - lnAf), (1 + zg1) ** pf)
     prod = Qf_at * Qg1
     e_prod = prod * (sg1 / Qg1)
     c1, c2 = st.columns([3, 2])
@@ -369,7 +375,7 @@ def page_same_shape():
                                      error_y=dict(type="data", array=e_prod[mask])))
         xx = np.linspace(1, 3.4, 20)
         fig.add_trace(go.Scatter(x=xx, y=xx, mode="lines", line=dict(color=BLACK, dash="dot"), name="Q_flux × Q_angle = 1 + z"))
-        base_layout(fig, "1 + z", "Q_flux × Q_angle", height=420)
+        base_layout(fig, "1 + z", "Q_flux × Q_angle (each from its own start)", height=420)
         st.plotly_chart(fig, width="stretch")
     with c2:
         s_sum = np.hypot(ef, eg)
@@ -378,10 +384,15 @@ def page_same_shape():
         st.dataframe(pd.DataFrame({"z": zg1, "Q_flux": Qf_at, "Q_angle": Qg1, "product": prod, "1 + z": 1 + zg1,
                                    "off by (σ)": (prod - 1 - zg1) / e_prod}).style.format(precision=2),
                      hide_index=True, width="stretch")
-    st.caption("The two registers come from different populations, supernovae and galaxy pairs, measured by different surveys. "
-               "The exponents add to 1 within their errors. Point by point, the two high-redshift products sit within 1σ of "
-               "1 + z and the two low-redshift ones fall short of it, by about 1σ and 2σ (see the table). An expanding-space picture "
-               "predicts the same relation, so this is a check that the two registers agree with each other.")
+    off = (prod - 1 - zg1) / e_prod
+    s_sig = abs(pf + pg - 1) / s_sum
+    verdict = ("add to 1 within their errors" if s_sig < 1 else
+               "come close to 1 but not within their errors" if s_sig < 3 else "do not add to 1")
+    st.caption(f"The two registers come from different populations, supernovae and galaxy pairs, measured by different surveys. "
+               f"The exponents {verdict} ({pf + pg:.2f} ± {s_sum:.2f}, {s_sig:.1f}σ from 1). Point by point, "
+               f"{int((np.abs(off) < 1).sum())} of the {len(off)} products are within 1σ of 1 + z and {int((np.abs(off) < 2).sum())} within 2σ "
+               "(see the table). An expanding-space picture predicts the same relation, so this is a check that the two "
+               "registers agree with each other.")
 
 
 def page_shape():
