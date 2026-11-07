@@ -988,3 +988,102 @@ def silica_index(lam_um):
     n = np.sqrt(1 + sum(b * l2 / (l2 - c ** 2) for b, c in zip(B, C)))
     dn = np.gradient(n, lam_um)
     return n, n - lam_um * dn
+
+
+# ---------------------------------------------------------------- Plasma: the medium light crosses
+# A pulsar's dispersion measure (DM) is read from timing alone: the pulse arrives later at lower radio frequency,
+# by DM_DELAY_S x DM / f^2. DM is the count of free electrons in a column one cm^2 across along the whole path
+# (units pc cm^-3). Turning it into a density needs a path length, which only the parallax pulsars give.
+F_P_PER_SQRT_NE = 8978.66        # Hz: plasma frequency of one electron per cm^3
+
+
+@lru_cache(maxsize=1)
+def pulsars():
+    """ATNF pulsar catalogue v1.59: name, Galactic l and b (deg), DM, parallax and its error (mas), and where it sits."""
+    with open(os.path.join(DATA, "pulsar_dm_atnf.csv"), encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    num = lambda s: float(s) if s not in ("", None) else np.nan
+    return dict(name=np.array([r["psrj"] for r in rows]),
+                l=np.array([num(r["gl_deg"]) for r in rows]),
+                b=np.array([num(r["gb_deg"]) for r in rows]),
+                dm=np.array([num(r["dm_pc_cm3"]) for r in rows]),
+                px=np.array([num(r["parallax_mas"]) for r in rows]),
+                px_err=np.array([num(r["parallax_err_mas"]) for r in rows]),
+                where=np.array([r["where"] for r in rows]))
+
+
+def plasma_layer_ceiling(min_lat=40.0, n_boot=2000, seed=1):
+    """DM x sin|b| for Galactic pulsars above |b| = min_lat: the column straight out of the disk (angles and timing only).
+
+    Returns (median, bootstrap 1-sigma, number used). Magellanic Cloud pulsars are left out, since their paths
+    cross the whole layer and then another galaxy.
+    """
+    p = pulsars()
+    keep = (np.abs(p["b"]) > min_lat) & ~np.isin(p["where"], ["LMC", "SMC"])
+    s = p["dm"][keep] * np.abs(np.sin(np.radians(p["b"][keep])))
+    rng = np.random.default_rng(seed)
+    boot = np.median(rng.choice(s, (n_boot, s.size)), axis=1)
+    return float(np.median(s)), float(np.std(boot)), int(s.size)
+
+
+def parallax_path_densities(min_sigma=3.0):
+    """Mean electron density on each path with a parallax distance: n_e = DM / D, D = 1/parallax.
+
+    Returns dict of arrays: name, l, b, dm, distance (pc), height |z| (pc), n_e and its error (from the parallax).
+    """
+    p = pulsars()
+    ok = np.isfinite(p["px"]) & (p["px"] > 0) & (p["px"] > min_sigma * p["px_err"]) & (p["where"] != "globular cluster")
+    d_pc = 1000.0 / p["px"][ok]
+    ne = p["dm"][ok] / d_pc
+    return dict(name=p["name"][ok], l=p["l"][ok], b=p["b"][ok], dm=p["dm"][ok], distance=d_pc,
+                z=np.abs(d_pc * np.sin(np.radians(p["b"][ok]))), n_e=ne, n_e_err=ne * p["px_err"][ok] / p["px"][ok])
+
+
+@lru_cache(maxsize=1)
+def ymw16_slices():
+    """YMW16 electron-density model (Yao, Manchester & Wang 2017), evaluated with pygedm and stored as log10 n_e.
+
+    Edge-on slice through the Sun and the Galactic centre, and a face-on slice through the mid-plane. The model is
+    fitted to pulsar DMs with independent distances, so it is a reading built on distances, not raw data.
+    """
+    z = np.load(os.path.join(DATA, "ymw16_slices.npz"))
+    return {k: z[k] for k in z.files}
+
+
+# Plasma across places: (name, n_e low, n_e high in cm^-3, how it is read, kind)
+PLASMA_LADDER = [
+    ("Between galaxies (FRBs)", 1e-7, 1e-6, "FRB dispersion, turned into a density with a redshift-to-distance step", "calculated"),
+    ("High above the Galactic disk", 2e-3, 6e-3, "pulsar DM ÷ parallax distance", "measured"),
+    ("Local Bubble around the Sun", 3e-3, 1e-2, "nearby pulsars, DM ÷ parallax distance", "measured"),
+    ("Warm ionized gas in the disk", 1e-2, 5e-2, "pulsar DM ÷ parallax distance", "measured"),
+    ("Inside a cold molecular cloud", 1e-5, 1e-2, "molecular-ion ratios (DCO⁺/HCO⁺) give the ionized fraction", "measured"),
+    ("Solar wind at Earth's orbit", 3.0, 10.0, "spacecraft counting electrons in place (ACE, Wind)", "measured"),
+    ("HII region (Orion core)", 1e3, 1e4, "emission-line ratios ([S II], [O II])", "measured"),
+    ("Solar wind near the Sun", 1e3, 1e4, "Parker Solar Probe in place, 10–20 solar radii", "measured"),
+    ("Earth's ionosphere, densest layer", 1e5, 2e6, "radio sounding: the reflected frequency is the plasma frequency", "measured"),
+    ("Base of the solar corona", 1e8, 1e9, "radio bursts emitted at the local plasma frequency", "measured"),
+]
+
+
+def plasma_cutoff_ne(f_ghz):
+    """Electron density above which a signal at f cannot pass at all (its frequency is below the plasma frequency)."""
+    return (f_ghz * 1e9 / F_P_PER_SQRT_NE) ** 2
+
+
+def cosmic_ray_balance_ne(n_gas, zeta=1e-17, alpha=2e-6):
+    """Calculated, not measured: free electrons where only cosmic rays ionize the gas.
+
+    Ionizations per cm^3 per s (zeta x n_gas) balance recombinations (alpha x n_e x n_ion, with n_ion = n_e), so
+    n_e = sqrt(zeta n_gas / alpha). zeta is the cosmic-ray ionization rate per molecule (assumed, 1e-17 to 1e-16 /s);
+    alpha is the lab recombination rate of molecular ions at ~10 K (about 2e-6 cm^3/s).
+    """
+    return np.sqrt(zeta * np.asarray(n_gas, float) / alpha)
+
+
+# Measured boxes for the plasma-vs-gas chart: (name, gas density range, electron density range), cm^-3
+PLASMA_VS_GAS = [
+    ("Warm ionized gas (disk)", (0.03, 0.3), (0.01, 0.1)),
+    ("HII regions", (1e2, 1e4), (1e2, 1e4)),
+    ("Molecular cloud cores", (1e3, 1e5), (1e-5, 1e-2)),
+    ("Diffuse molecular clouds", (1e2, 1e3), (0.01, 0.1)),
+]
