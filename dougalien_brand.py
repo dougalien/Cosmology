@@ -25,7 +25,8 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 LOGO = ASSETS / "dougalien_systems_logo.png"
 MARK = ASSETS / "dougalien_mark.png"
 MARK_SVG = ASSETS / "dougalien_mark.svg"
-SITE_URL = "https://dougalien.com"
+SITE_URL = "https://www.dougalien.com"
+SITE_NAME = "www.dougalien.com"
 
 PAPER = "#F4F4F1"
 SHEET = "#FFFFFF"
@@ -110,10 +111,22 @@ _CSS = f"""
   display: inline-flex; align-items: center; gap: 0.45rem;
   font-family: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
   font-weight: 600; font-size: 0.95rem; letter-spacing: 0.02em;
-  color: {SLATE} !important; text-decoration: none !important; margin-bottom: -0.6rem;
+  color: {SLATE} !important; text-decoration: none !important;
 }}
 .dg-label img {{ width: 1.6rem; height: 1.6rem; }}
 .dg-label:hover {{ color: {RUST} !important; }}
+/* The label and the website address sit on one line, with a sand dot between them */
+.dg-labelrow {{
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.6rem; margin-bottom: -0.6rem;
+}}
+.dg-dot {{ color: {SAND}; font-weight: 700; }}
+.dg-site {{
+  font-family: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500; font-size: 0.95rem; letter-spacing: 0.02em;
+  color: {SLATE} !important; text-decoration: underline; text-decoration-color: {SAND};
+  text-underline-offset: 0.2em;
+}}
+.dg-site:hover {{ color: {RUST} !important; text-decoration-color: {RUST}; }}
 /* One plain line under the app title or a page heading */
 .dg-tagline {{ font-size: 1.15rem; color: {INK}; margin: -0.4rem 0 1.2rem 0; max-width: 52rem; }}
 .dg-intro {{ font-size: 1.02rem; color: {CAPTION}; margin: -0.4rem 0 1rem 0; max-width: 52rem; }}
@@ -265,8 +278,10 @@ def app_header(title, tagline):
     """Front page only: the Dougalien Systems label with the D mark, the app title, and one plain line on what the app does."""
     src = _mark_src()
     mark = f'<img src="{src}" alt="">' if src else ""
-    st.markdown(f'<a class="dg-label" href="{SITE_URL}" target="_blank" rel="noopener" '
-                f'title="Visit dougalien.com">{mark}Dougalien Systems</a>', unsafe_allow_html=True)
+    st.markdown(f'<div class="dg-labelrow"><a class="dg-label" href="{SITE_URL}" target="_blank" rel="noopener" '
+                f'title="Visit dougalien.com">{mark}Dougalien Systems</a><span class="dg-dot" aria-hidden="true">·</span>'
+                f'<a class="dg-site" href="{SITE_URL}" target="_blank" rel="noopener">{SITE_NAME}</a></div>',
+                unsafe_allow_html=True)
     st.title(title, anchor=False)
     st.markdown(f'<p class="dg-tagline">{html.escape(tagline)}</p>', unsafe_allow_html=True)
 
