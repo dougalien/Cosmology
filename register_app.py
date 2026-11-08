@@ -154,8 +154,7 @@ SPHERE_LIMIT = 6 * np.sqrt(np.pi)  # the value the faceted sequence approaches; 
 
 # ------------------------------------------------------------------ pages
 def page_premise():
-    brand.app_header("Finite Deformable Geometry", "Read the shape of the universe from measurements, by comparing "
-                                                   "each measured value with its ideal.")
+    st.header("Premise: why read the universe in registers", anchor=False)
     st.markdown("""
 #### 1. What is a register?
 A register is a measured value divided by its ideal value, so the ideal sits at **Q = 1**. The ideal is a reference
@@ -239,7 +238,7 @@ def overview_card(col, title, fig, reads):
 
 
 def page_overview():
-    st.title("All registers at a glance")
+    st.header("All registers at a glance")
     st.markdown("Each card is one register: the measurement against its ideal, drawn as a dashed slate line. "
                 "Open a register in the sidebar for its controls and details.")
     cards = []
@@ -357,7 +356,7 @@ def page_overview():
 
 
 def page_same_shape():
-    st.title("Do the registers share one shape?")
+    st.header("Do the registers share one shape?")
     st.markdown(
         "Each redshift register is set to Q = 1 by the nearby population, so its departure from the ideal is zero by "
         "construction for nearby light. Read from far to near, the departure shrinks toward zero as the light's path to us shortens. "
@@ -482,7 +481,7 @@ def page_same_shape():
 
 
 def page_shape():
-    st.title("Shape: solids and spheres")
+    st.header("Shape: solids and spheres")
     st.markdown(
         "**Q_v = S^(3/2) / V** compares a body's surface S with the volume V it holds. It has no units and does not change "
         "with size. Every number here comes straight from a triangle mesh: the area is a sum of triangle areas and the "
@@ -538,7 +537,7 @@ CIRCLE_LIMIT = 4 * np.pi  # the value the doubled polygons approach; used only t
 
 
 def page_outline():
-    st.title("Shape: outlines (2D)")
+    st.header("Shape: outlines (2D)")
     st.markdown(
         "**Q_a = P² / A** compares an outline's boundary length P with the area A it encloses. It has no units and does "
         "not change with size. The ideal is a perfect circle. This is the classical isoperimetric ratio (Osserman 1978): "
@@ -599,7 +598,7 @@ def page_outline():
 
 
 def page_flux():
-    st.title("Flux dimming: how supernova light fades with redshift")
+    st.header("Flux dimming: how supernova light fades with redshift")
     st.markdown("Q = 10^((m − C)/5) / z: the dimming of supernova light divided by redshift, with the nearby supernovae "
                 "setting Q = 1. It is built from magnitudes (flux ratios) and redshifts (frequency ratios).")
     src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "DES 5-year (binned with covariance)",
@@ -663,7 +662,7 @@ def page_flux():
 
 
 def page_time():
-    st.title("Time dilation: how far light curves stretch")
+    st.header("Time dilation: how far light curves stretch")
     st.markdown("Transients carry their own clocks. The measured exponent b in (observed width / rest width) = (1+z)^b "
                 "gives the register Q_t = (1+z)^(b−1), which equals 1 at full stretch (b = 1).")
     view = st.sidebar.radio("Show", ["Exponent b", "Q_t(z) = (1+z)^(b−1)"])
@@ -704,7 +703,7 @@ def page_time():
 
 
 def page_aging():
-    st.title("Aging rate: galaxies as clocks across redshift")
+    st.header("Aging rate: galaxies as clocks across redshift")
     st.markdown("Passively aging galaxies are clocks spread across redshift. Pairs of them give the change in redshift per "
                 "change in stellar age, |dz/dt|. The register divides it by the local rate, so Q = 1 would mean a steady rate.")
     za = st.sidebar.slider("Chronometers below this redshift set the local rate", 0.1, 0.5, 0.2, 0.05)
@@ -720,7 +719,7 @@ def page_aging():
 
 
 def page_angle():
-    st.title("Acoustic angle: the preferred angle between galaxy pairs")
+    st.header("Acoustic angle: the preferred angle between galaxy pairs")
     st.markdown("Galaxies prefer a fixed separation, which shows in a thin redshift slice as a preferred angle between pairs. "
                 "The register is Q = θ(z)·z / (θ(z_a)·z_a): with the ideal, an angle that shrinks as 1/z, Q stays at 1.")
     k = st.sidebar.selectbox("Anchor point", range(5), format_func=lambda i: f"z = {R.ANGLES['z'][i]}  ({R.ANGLES['source'][i]})")
@@ -744,7 +743,7 @@ def page_angle():
 
 
 def page_cusp():
-    st.title("Cusp flux ratio: the brightness of lensed image triplets")
+    st.header("Cusp flux ratio: the brightness of lensed image triplets")
     st.markdown("When a lens splits one source into a tight triplet of images, a perfectly smooth lens would make the middle "
                 "image as bright as the two outer ones together, in the limit of a closed triplet. The register is "
                 "**Q = F_middle / (F_outer1 + F_outer2)**, from radio flux ratios.")
@@ -770,7 +769,7 @@ def page_cusp():
 
 
 def page_rotation():
-    st.title("Galaxy rotation: observed spin against visible matter")
+    st.header("Galaxy rotation: observed spin against visible matter")
     st.markdown("Q = g_obs / g_bar compares the rotation a galaxy shows with the rotation its visible matter alone would give. "
                 "Q = 1 would mean visible matter accounts for all of it.")
     ud = st.sidebar.slider("Disk mass-to-light ratio", 0.2, 1.0, 0.5, 0.05)
@@ -802,7 +801,7 @@ def page_rotation():
 
 
 def page_single():
-    st.title("Clock and deflection: two single-value registers")
+    st.header("Clock and deflection: two single-value registers")
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Clock")
@@ -817,7 +816,7 @@ def page_single():
 
 
 def page_light_matter():
-    st.title("Light and matter together")
+    st.header("Light and matter together")
     st.markdown("""
 Gravity shows in two kinds of register. A **matter register** reads how a body moves: the Doppler swing of its orbit, the
 turn of the orbit, the shrinking of its period. A **light register** reads what happens to light and clocks: a steady
@@ -840,7 +839,7 @@ matter swing.** One cause sets both.
     fig.update_yaxes(type="category", autorange="reversed")
     st.plotly_chart(fig, width="stretch")
 
-    st.header("1. S2 at the center of the Galaxy")
+    st.subheader("1. S2 at the center of the Galaxy")
     grav, side = R.s2_predicted_shift()
     c1, c2, c3 = st.columns(3)
     c1.metric("Orbital swing at closest approach", f"{R.S2_ORBIT['v_peri_kms']:.0f} km/s", "Doppler shift plus the track on the sky", delta_color="off")
@@ -851,7 +850,7 @@ matter swing.** One cause sets both.
                "The published fits also solve for the distance to the Galactic center and the central mass at the same time, "
                "so the quoted errors carry that fit with them.")
 
-    st.header("2. Binary pulsars: time only")
+    st.subheader("2. Binary pulsars: time only")
     ht = R.hulse_taylor_register()
     st.markdown("A pulsar is a clock in orbit. Its arrival times give three separate things: how fast the orbit **turns** "
                 "(matter), how much the clock **slows and speeds** around the orbit (light), and how fast the orbit "
@@ -871,7 +870,7 @@ should: the part that disagrees is relative motion.
                f"From the turn and the clock term: {ht['m1']:.3f} and {ht['m2']:.3f} solar masses. The only π is 2π per orbit, "
                "which turns one orbit into radians: a unit, not a limit.")
 
-    st.header("What this says about a mechanism")
+    st.subheader("What this says about a mechanism")
     st.markdown("""
 - The light and matter registers are **not independent** in any system where both are read. Their ratio sits at Q = 1 to
   7% (S2), 0.2% (Hulse–Taylor) and 0.05% (double pulsar).
@@ -885,7 +884,7 @@ should: the part that disagrees is relative motion.
 
 
 def page_gravity():
-    st.title("Gravity: departure from G")
+    st.header("Gravity: departure from G")
     st.markdown("""
 FDG uses ideals for comparison, not constants. Here the ideal is **one G everywhere**: the pull a system shows equals
 the pull its own matter gives with the G measured in the lab. The register is **Q_G = pull shown ÷ pull from its own
@@ -956,7 +955,7 @@ neutron-star binaries down to the thin outer edges of galaxies.
 
 
 def page_mass():
-    st.title("Mass: a reading, not a measurement")
+    st.header("Mass: a reading, not a measurement")
     st.markdown("""
 No instrument reads a mass. What is measured is always an **angle**, a **time**, a **frequency shift** or a **flux**.
 A mass comes from multiplying that measured part by **assumed parts**: a distance, an ideal shape (a perfect ellipse,
@@ -968,7 +967,7 @@ needs G, and lab measurements of G disagree by several parts in 10,000. So every
 the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant.
 """)
     budget = R.mass_budget()
-    st.header("How much of each mass is measured")
+    st.subheader("How much of each mass is measured")
     fig = go.Figure()
     colors = {"measured": "#2E7D6B", "assumed": brand.RUST, "changes": "#7A5195"}
     labels = [f"{o} · {what}" for o, what, _ in budget]
@@ -994,7 +993,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
   a system that never holds still.
 """)
 
-    st.header("How much of the motion has been watched")
+    st.subheader("How much of the motion has been watched")
     cyc = R.cycles_seen()
     fig = go.Figure(go.Bar(x=[c[1] for c in cyc], y=[c[0] for c in cyc], orientation="h", marker_color=BLACK,
                            hovertemplate="%{y}<br>%{x:.2g} of one orbit<extra></extra>"))
@@ -1008,7 +1007,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
                "a snapshot, and steady circular motion is an assumption. The orbit times here are themselves calculations "
                "from the same assumed masses and distances, so treat them as rough.")
 
-    st.header("1. Sgr A*: angles and a period")
+    st.subheader("1. Sgr A*: angles and a period")
     th3p2, e = R.sgr_a_measured_part()
     d = st.slider("Assumed distance to the Galactic center (pc)", 7800, 8400, 8178, 1)
     c1, c2, c3 = st.columns(3)
@@ -1027,7 +1026,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
                "Doppler speed (km/s) to the motion across the sky (mas/yr), which assumes the orbit is a perfect closed "
                "ellipse around a point. The mass goes as the cube of that distance.")
 
-    st.header("2. M87*: one ring angle")
+    st.subheader("2. M87*: one ring angle")
     c1, c2 = st.columns(2)
     alpha = c1.slider("Assumed ring-to-mass shape factor", 9.5, 12.5, 11.0, 0.1, format="%g",
                       help="Ring diameter in units of GM/(D c²). A perfect circular shadow of a non-spinning hole gives 10.39.")
@@ -1052,7 +1051,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
     st.caption("Same object, three recipes. Gas motions and star motions disagree by nearly a factor of two, each with "
                "its own model of how the gas or stars move. The ring itself changed between 2017 and 2018.")
 
-    st.header("3. NGC 5548: a delay and a line width")
+    st.subheader("3. NGC 5548: a delay and a line width")
     c1, c2 = st.columns(2)
     lag = c1.slider("Lag in the year you pick (days)", float(R.NGC5548_LAG_D[0]), float(R.NGC5548_LAG_D[1]), 15.0, 0.1, format="%g")
     f = c2.select_slider("Assumed virial factor f", [v for _, v in R.VIRIAL_F], value=6.3,
@@ -1076,7 +1075,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
                "published mean holds steady: that steadiness is the virial assumption at work. f is never measured in NGC 5548; "
                "it is borrowed from galaxies where a different mass recipe was used.")
 
-    st.header("4. A disk galaxy: a Doppler swing and an outline")
+    st.subheader("4. A disk galaxy: a Doppler swing and an outline")
     gal, _ = R.sparc_tables()
     names = sorted(n for n, g in gal.items() if g["Q"] == 1 and g["inc"] >= 30)
     name = st.selectbox("Galaxy (SPARC, quality 1)", names, index=names.index("NGC3198"))
@@ -1109,7 +1108,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
                "circle-seen-at-a-tilt is an ideal. The 'missing mass' ratio in the last metric changes with the assumed "
                "distance and mass-to-light ratio, and the visible mass uses 1.33 × the hydrogen mass for gas.")
 
-    st.header("What this says")
+    st.subheader("What this says")
     st.markdown("""
 - A mass is a **reading assembled from measured ratios and chosen ideals**. The measured part is usually the small part
   of the spread.
@@ -1121,7 +1120,7 @@ the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant
 
 
 def page_light_speed():
-    st.title("Light: departure from the vacuum limit")
+    st.header("Light: departure from the vacuum limit")
     st.markdown("""
 Light speed is called a constant, but no light anyone has measured moves at it. Two things sit behind the word.
 
@@ -1176,7 +1175,7 @@ The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart read
   one signal with another, so they show that two signals depart *together*, not that either sits at the ideal.
 """)
 
-    st.header("Color changes the reading")
+    st.subheader("Color changes the reading")
     lam = np.linspace(0.25, 2.0, 300)
     n, ng = R.silica_index(lam)
     fr = np.logspace(-1, 1, 200)
@@ -1198,7 +1197,7 @@ it. In an optical fiber at 1.55 µm a signal runs at about 0.68 of the limit. In
 limit while the signal runs slower; only the signal carries information, and it never passes Q_c = 1.
 """)
 
-    st.header("How the ideal was fixed")
+    st.subheader("How the ideal was fixed")
     h = pd.DataFrame(R.C_HISTORY, columns=["year", "who", "km_s", "err"])
     h["departure"] = np.abs(h.km_s / R.C_KMS - 1)
     h["rel_err"] = h.err / R.C_KMS
@@ -1234,7 +1233,7 @@ PLASMA_SCALE = [[0.0, "#F7F1E6"], [0.35, brand.SAND], [0.7, brand.RUST], [1.0, "
 
 
 def page_plasma():
-    st.title("Plasma: the medium light crosses")
+    st.header("Plasma: the medium light crosses")
     st.markdown("""
 Space between the stars is not empty. Every path a radio signal has been timed along holds free electrons, so the
 emptiest "vacuum" anyone has measured is a very thin plasma. Plasma is a real medium for light, and it can be mapped.
@@ -1252,7 +1251,7 @@ centimeter across. It needs no distance.
     p = R.pulsars()
     gal = ~np.isin(p["where"], ["LMC", "SMC"])
 
-    st.header("1. The plasma column on the sky")
+    st.subheader("1. The plasma column on the sky")
     o = np.argsort(p["dm"])
     l180 = np.where(p["l"] > 180, p["l"] - 360, p["l"])
     fig = go.Figure(go.Scattergl(
@@ -1271,7 +1270,7 @@ plane of the Galaxy. The two clumps lower right are {n_mc} pulsars in the Large 
 signals cross our Galaxy's plasma and then another galaxy's.
 """)
 
-    st.header("2. The layer has a top")
+    st.subheader("2. The layer has a top")
     s = p["dm"] * np.abs(np.sin(np.radians(p["b"])))
     ceil, ceil_err, n_used = R.plasma_layer_ceiling()
     fig = go.Figure()
@@ -1298,7 +1297,7 @@ behind them. The level it stops at is the thickness of the plasma, counted in el
 25–45° are the Magellanic Clouds, which add a second galaxy's plasma.
 """)
 
-    st.header("3. Density along paths with a parallax")
+    st.subheader("3. Density along paths with a parallax")
     d = R.parallax_path_densities()
     dep = R.plasma_departure(d["n_e"], f_ghz)
     fig = go.Figure(go.Scatter(
@@ -1319,7 +1318,7 @@ calculation from a model. About one free electron in every 60 cubic centimeters 
 the plane average lower, as they should if the layer thins with height.
 """)
 
-    st.header("4. The contour map")
+    st.subheader("4. The contour map")
     g = R.ymw16_slices()
     levels = dict(start=-4, end=0.5, size=0.5)
     fig = make_subplots(rows=1, cols=2, column_widths=[0.45, 0.55], horizontal_spacing=0.09,
@@ -1348,7 +1347,7 @@ the Gum Nebula) are shapes the modelers chose. So the map is a reading built on 
 1 and 2 are the measured part it rests on.
 """)
 
-    st.header("5. From the thinnest plasma to the densest")
+    st.subheader("5. From the thinnest plasma to the densest")
     lad = R.PLASMA_LADDER
     cut = R.plasma_cutoff_ne(f_ghz)
     fig = go.Figure()
@@ -1376,7 +1375,7 @@ short-wave radio.
     show_table(rows, names={"place": "Place", "n_e": "n_e (per cm³)", "departure": f"1 − Q_c at {f_ghz:g} GHz",
                             "how": "How the density is read", "kind": "Kind"}, wrap=True)
 
-    st.header("6. Plasma does not follow the mass")
+    st.subheader("6. Plasma does not follow the mass")
     zeta = st.select_slider("Cosmic-ray ionization rate per molecule (assumed, per second)", options=[1e-17, 3e-17, 1e-16],
                             value=1e-17, format_func=lambda v: sci(v, 1))
     ng = np.logspace(-2, 6, 200)
@@ -1406,7 +1405,7 @@ So plasma follows the energy supply, not the mass. The purple line is a calculat
 and an assumed cosmic-ray rate, set by the slider.
 """)
 
-    st.header("7. A register with two ideals: stopped and the vacuum limit")
+    st.subheader("7. A register with two ideals: stopped and the vacuum limit")
     st.markdown("""
 For a signal, Q_c runs between two ideals: **0, stopped**, and **1, the vacuum limit**. Neither is reached. Light has been
 "stopped" in cold atom clouds, but while it is stopped it has been handed to the atoms and is not there as light.
@@ -1473,7 +1472,7 @@ their boundaries sit in different places.
 front of a signal still never beats the limit, so the 0 to 1 bounds hold for the signal itself.
 """)
 
-    st.header("8. What plasma is not")
+    st.subheader("8. What plasma is not")
     st.markdown("""
 - **Not the old ether.** The ether was meant to carry all light the same way. Plasma treats every frequency differently:
   the lag goes as 1/frequency², measured from 40 MHz to 8 GHz in pulsars and in fast radio bursts. For visible light the
@@ -1493,7 +1492,7 @@ anyone has timed is empty.
 
 
 def page_motion():
-    st.title("No fixed point: relative motion")
+    st.header("No fixed point: relative motion")
     st.markdown("""
 In plate tectonics every measurement is one plate moving against another. Absolute plate speeds only appear once a
 reference frame is chosen, such as the hotspots or a no-net-rotation frame, and even the hotspots drift. Beyond our Galaxy
@@ -1502,7 +1501,7 @@ angle per unit time**. Every speed and distance out there comes from one of thos
 Expansion is that kind of choice, made for the whole universe at once: it turns redshift into speed and distance.
 """)
 
-    st.header("1. Andromeda: what is measured, and what is calculated")
+    st.subheader("1. Andromeda: what is measured, and what is calculated")
     mu, mu_e = R.m31_pm_total()
     c1, c2, c3 = st.columns(3)
     c1.metric("Redshift (measured)", f"z = {R.M31['v_helio'] / R.C_KMS:.4f}".replace("-", "−"),
@@ -1556,7 +1555,7 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
                    f"which comes from a Galaxy model. At {v_c} km/s the closing speed is {-float(R.m31_galactocentric_radial(v_c)):.0f} km/s. "
                    "Changing the frame changes the speed by almost a factor of three.")
 
-    st.header("2. Looming: time to contact from angles")
+    st.subheader("2. Looming: time to contact from angles")
     st.markdown("An object coming toward you grows on the sky. Its angular size divided by its rate of growth is the **time "
                 "to contact**, τ = θ / (dθ/dt) (Lee 1976). Flies and drivers use the same quantity. Multiply τ "
                 "by the measured closing speed and you get a distance.")
@@ -1569,7 +1568,7 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
     st.markdown(f"Gaia measures Andromeda's whole sideways drift to about ±{mu_e:.0f} µas/yr. The looming signal is a few µas/yr, "
                 "below that today. Precision grows with the time baseline, so more years of Gaia data will bring it within reach.")
 
-    st.header("3. The sky's \"hotspot\": two rest frames that disagree")
+    st.subheader("3. The sky's \"hotspot\": two rest frames that disagree")
     dr = R.dipole_register()
     st.markdown(f"""
 The microwave sky is **{R.CMB_DIPOLE['dT_mK']:.3f} mK** warmer in one direction, a fraction **{sci(dr['beta'], 3)}** of its
@@ -1615,7 +1614,7 @@ predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too st
                "quoted significance. The quasar frame is also used, through VLBI and Gaia, to fix directions on the sky: it pins "
                "orientation but carries no speed or position.")
 
-    st.header("4. The same move, made for the whole universe")
+    st.subheader("4. The same move, made for the whole universe")
     st.dataframe(pd.DataFrame([
         ["Andromeda's line-of-sight speed", "redshift (frequency ratio)", "nothing: local Doppler", "—"],
         ["Andromeda's sideways speed", "angle per year", "a distance", "the distance ladder"],
@@ -1626,29 +1625,106 @@ predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too st
     st.caption("The registers are built from the left-hand column: redshift, angle, flux and time ratios.")
 
 
-PAGES = {
-    "Premise": page_premise,
-    "All registers": page_overview,
-    "Do they share a shape?": page_same_shape,
-    "Shape: solids and spheres": page_shape,
-    "Shape: outlines (2D)": page_outline,
-    "Flux dimming": page_flux,
-    "Time dilation": page_time,
-    "Aging rate": page_aging,
-    "Acoustic angle": page_angle,
-    "Cusp": page_cusp,
-    "Rotation": page_rotation,
-    "Clock & deflection": page_single,
-    "Light and matter together": page_light_matter,
-    "Gravity: departure from G": page_gravity,
-    "Mass: a reading": page_mass,
-    "Light: departure from the vacuum limit": page_light_speed,
-    "Plasma: the medium light crosses": page_plasma,
-    "No fixed point": page_motion,
-    "Sources": sources.page,
+TAGLINE = "Read the shape of the universe from measurements, by comparing each measured value with its ideal."
+
+# Every page, grouped for the sidebar menu: (menu group, function, menu title, url)
+PAGE_LIST = [
+    ("", None, "Home", "home"),
+    ("Start here", page_premise, "Premise", "premise"),
+    ("Start here", page_overview, "All registers", "all-registers"),
+    ("Start here", page_same_shape, "Do they share a shape?", "same-shape"),
+    ("Shape", page_shape, "Shape: solids and spheres", "solids"),
+    ("Shape", page_outline, "Shape: outlines (2D)", "outlines"),
+    ("Light across redshift", page_flux, "Flux dimming", "flux"),
+    ("Light across redshift", page_time, "Time dilation", "time-dilation"),
+    ("Light across redshift", page_aging, "Aging rate", "aging"),
+    ("Light across redshift", page_angle, "Acoustic angle", "acoustic-angle"),
+    ("Mass and gravity", page_cusp, "Cusp", "cusp"),
+    ("Mass and gravity", page_rotation, "Rotation", "rotation"),
+    ("Mass and gravity", page_single, "Clock & deflection", "clock-deflection"),
+    ("Mass and gravity", page_light_matter, "Light and matter together", "light-and-matter"),
+    ("Mass and gravity", page_gravity, "Gravity: departure from G", "gravity"),
+    ("Mass and gravity", page_mass, "Mass: a reading", "mass"),
+    ("Light and its medium", page_light_speed, "Light: vacuum limit", "light-speed"),
+    ("Light and its medium", page_plasma, "Plasma: the medium light crosses", "plasma"),
+    ("Frames and sources", page_motion, "No fixed point", "no-fixed-point"),
+    ("Frames and sources", sources.page, "Sources", "sources"),
+]
+
+# one line on each page, for the Home page
+ABOUT = {
+    "premise": "what a register is, why use them, and what they leave out",
+    "all-registers": "every register on one screen, each against its ideal",
+    "same-shape": "whether the redshift registers bend the same way",
+    "solids": "faceted solids closing in on a perfect sphere, and real bodies",
+    "outlines": "polygons, planetary orbits and craters against a perfect circle",
+    "flux": "how supernova light dims with redshift (Pantheon+, DES)",
+    "time-dilation": "how far distant light curves stretch",
+    "aging": "galaxies used as clocks across redshift",
+    "acoustic-angle": "the preferred angle between galaxy pairs",
+    "cusp": "the brightness of lensed image triplets",
+    "rotation": "how fast disk galaxies spin against their visible matter",
+    "clock-deflection": "two single-value registers: clocks and light passing the Sun",
+    "light-and-matter": "light and motion read on one object (S2, binary pulsars)",
+    "gravity": "gravity read as a departure from one G",
+    "mass": "how much of a mass is measured and how much is assumed",
+    "light-speed": "light speed in glass, plasma and near mass",
+    "plasma": "the free electrons light passes through on the way here",
+    "no-fixed-point": "why there is no fixed point to measure from beyond the Galaxy",
+    "sources": "the data and papers behind every page",
 }
 
-st.sidebar.header("Registers")
-choice = st.sidebar.radio("Register", list(PAGES), label_visibility="collapsed")
-st.sidebar.divider()
-PAGES[choice]()
+GROUP_ABOUT = {
+    "Start here": "The idea, and all the registers side by side.",
+    "Shape": "Bodies and outlines measured against a perfect sphere or circle.",
+    "Light across redshift": "What happens to light from farther and farther away.",
+    "Mass and gravity": "Lensing, spinning galaxies, clocks, orbits and what a mass reading is made of.",
+    "Light and its medium": "How fast light travels, and what it travels through.",
+    "Frames and sources": "Where the measurements are taken from, and where the data come from.",
+}
+
+
+def page_home():
+    st.header("Start here", anchor=False)
+    st.markdown(
+        "This app reads the shape of the universe straight from published measurements. It does that by laying each "
+        "measurement against an ideal, a perfect version of the same thing, and showing how far the real thing departs "
+        "from it.")
+    with st.container(border=True):
+        st.markdown(
+            "**What is a register?** *Register* is the name this app gives to that comparison. It is a working term "
+            "for this project, not a standard term you will find in textbooks or papers. A register takes one kind of "
+            "measurement and divides it by its ideal value. The result is called **Q**:\n\n"
+            "- **Q = 1** means the measurement matches the ideal exactly.\n"
+            "- **Q above or below 1** means it departs from the ideal, and by how much.\n\n"
+            "For example, a planet's orbit can be compared with a perfect circle, or the dimming of supernova light "
+            "with the simple straight-line rule seen in nearby supernovae. Because Q has no units, very different "
+            "things can be read side by side. The size of each departure, and how it changes, is what the pages show.")
+    st.markdown(
+        "**How to get around:** the menu on the left lists every page, in groups. Start with *Premise* for the idea "
+        "and *All registers* for the whole picture, then open any register. Each page's own settings appear in the "
+        "sidebar under the menu. On every chart the ideal, Q = 1, is drawn as a dashed line. *Sources* lists the "
+        "data and papers behind each page.")
+    groups = {}
+    for group, _fn, title, url in PAGE_LIST:
+        if group:
+            groups.setdefault(group, []).append((title, url))
+    for group, items in groups.items():
+        with st.container(border=True):
+            st.subheader(group, anchor=False)
+            st.caption(GROUP_ABOUT[group])
+            for title, url in items:
+                st.page_link(PAGES_BY_URL[url], label=f"**{title}**: {ABOUT[url]}")
+    st.page_link(PAGES_BY_URL["premise"], label="Begin with the premise →")
+
+
+PAGES_BY_URL = {url: st.Page(fn or page_home, title=title, url_path=url, default=(url == "home"))
+                for _g, fn, title, url in PAGE_LIST}
+NAV = {}
+for group, _fn, _title, url in PAGE_LIST:
+    NAV.setdefault(group, []).append(PAGES_BY_URL[url])
+page = st.navigation(NAV, expanded=True)  # list every page, so none hide behind "View more"
+
+# The same title banner on every page, as on the other Dougalien Systems apps; each page then gives its own heading
+brand.app_header("Finite Deformable Geometry", TAGLINE)
+page.run()
