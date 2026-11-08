@@ -29,7 +29,7 @@ SOURCES = [
         ("Lewis, G. F., & Brewer, B. J. (2023). Detection of the cosmological time dilation of high-redshift quasars. *Nature Astronomy*, 7, 1265–1269.",
          "https://doi.org/10.1038/s41550-023-02029-2"),
     ]),
-    ("Ageing rate (cosmic chronometers)", [
+    ("Aging rate (cosmic chronometers)", [
         ("Bengaly, C., Dantas, M. A., Casarini, L., & Alcaniz, J. (2023). Measuring the Hubble constant with cosmic chronometers: A machine learning approach. *The European Physical Journal C*. Table 1, the 31 H(z) values used here (compiled from Jimenez et al. 2003, Simon et al. 2005, Stern et al. 2010, Moresco et al. 2012, Zhang et al. 2014, Moresco 2015, Moresco et al. 2016 and Ratsimbazafy et al. 2017).",
          "https://doi.org/10.1140/epjc/s10052-023-11734-1"),
         ("Moresco, M., et al. (2012). Improved constraints on the expansion rate of the Universe up to z ~ 1.1 from the spectroscopic evolution of cosmic chronometers. *Journal of Cosmology and Astroparticle Physics*, 2012(08), 006.",
@@ -109,7 +109,7 @@ SOURCES = [
         ("Disk galaxies: SPARC (Lelli, McGaugh & Schombert 2016), as on the Galaxy rotation page.", None),
     ]),
     ("Light: departure from the vacuum limit", [
-        ("BIPM (2019). *The International System of Units (SI)*, 9th edition. The metre is defined from c = 299,792,458 m/s (adopted 1983, 17th CGPM).",
+        ("BIPM (2019). *The International System of Units (SI)*, 9th edition. The meter is defined from c = 299,792,458 m/s (adopted 1983, 17th CGPM).",
          "https://www.bipm.org/en/publications/si-brochure"),
         ("Refractive indices at 589 nm: air 1.000293, water 1.3330, BK7 1.5168, diamond 2.4175 (CRC Handbook of Chemistry and Physics; Schott BK7 data sheet).", None),
         ("Malitson, I. H. (1965). Interspecimen comparison of the refractive index of fused silica. *Journal of the Optical Society of America*, 55, 1205. Sellmeier fit used for the glass curve.",

@@ -93,7 +93,7 @@ PLATONIC = {"Tetrahedron": 4, "Cube": 6, "Octahedron": 8, "Dodecahedron": 12, "I
 def icosphere(level):
     """Icosahedron subdivided `level` times, vertices pushed onto the unit sphere.
 
-    20 * 4**level triangular faces. Each new vertex is a normalised midpoint,
+    20 * 4**level triangular faces. Each new vertex is a normalized midpoint,
     which needs a square root and nothing else.
     """
     v, f = platonic("Icosahedron")
@@ -136,7 +136,7 @@ def lumpy_body(level, roughness, seed=0):
     v, f = icosphere_cached(level)
     rng = np.random.default_rng(seed)
     r = 1 + roughness * rng.standard_normal(len(v))
-    # three passes of neighbour averaging so bumps are lumps, not spikes
+    # three passes of neighbor averaging so bumps are lumps, not spikes
     nb = [[] for _ in range(len(v))]
     for a, b, c in f:
         nb[a] += [b, c]; nb[b] += [a, c]; nb[c] += [a, b]
@@ -265,7 +265,7 @@ LAWS = {
 
 
 def law_residuals(fn, q, c, z, m, s):
-    """Magnitude residuals after the free offset is marginalised (weighted mean removed)."""
+    """Magnitude residuals after the free offset is marginalized (weighted mean removed)."""
     mod = 5 * np.log10(z * fn(z, q, c))
     r = m - mod
     w = 1 / s ** 2
@@ -302,7 +302,7 @@ def time_dilation():
     return out
 
 
-# ----------------------------------------------------------------- ageing rate
+# ----------------------------------------------------------------- aging rate
 def chronometers():
     rows = _csv("stage9_cosmic_chronometer_31pt.csv")
     z = np.array([float(r["z"]) for r in rows])
@@ -311,7 +311,7 @@ def chronometers():
     return z, H, sH
 
 
-def ageing(undo_frame=True, z_anchor=0.2):
+def aging(undo_frame=True, z_anchor=0.2):
     """Rate of redshift change per unit stellar age, |dz/dt| = H (1+z), relative to the local rate.
 
     Published chronometer values carry a 1/(1+z) frame conversion; undo_frame removes it.
@@ -634,7 +634,7 @@ def dipole_register():
 # here is a ratio, so this unit cancels.
 T_SUN = 4.925490947e-6
 
-# S2 around the Galactic centre. f scales the extra redshift at closest approach (gravitational shift plus the
+# S2 around the Galactic center. f scales the extra redshift at closest approach (gravitational shift plus the
 # shift from sideways motion) against the value predicted from the orbit's own Doppler swing. f = 1 is the ideal.
 S2_REDSHIFT = [
     # study, f, statistical error, systematic error
@@ -662,7 +662,7 @@ def s2_register():
     return [(s, f, float(np.hypot(a, b))) for s, f, a, b in S2_REDSHIFT]
 
 
-# Hulse-Taylor binary pulsar PSR B1913+16, timing only (Weisberg & Huang 2016, Table 2).
+# Hulse–Taylor binary pulsar PSR B1913+16, timing only (Weisberg & Huang 2016, Table 2).
 HULSE_TAYLOR = dict(
     Pb_d=0.322997448918,            # orbital period (days)
     e=0.6171340,                    # orbit shape
@@ -713,9 +713,9 @@ def light_matter_table():
     ht = hulse_taylor_register()
     rows = [dict(system=s, register="S2 extra redshift / swing²", Q=f, err=e, compares="light shift against orbital swing")
             for s, f, e in s2_register()]
-    rows.append(dict(system="Hulse-Taylor pulsar (raw)", register="period shrink / predicted", Q=ht["raw"][0], err=ht["raw"][1],
+    rows.append(dict(system="Hulse–Taylor pulsar (raw)", register="period shrink / predicted", Q=ht["raw"][0], err=ht["raw"][1],
                      compares="clock term and orbit turn against orbit shrink"))
-    rows.append(dict(system="Hulse-Taylor pulsar (Galaxy's pull removed)", register="period shrink / predicted", Q=ht["gal"][0],
+    rows.append(dict(system="Hulse–Taylor pulsar (Galaxy's pull removed)", register="period shrink / predicted", Q=ht["gal"][0],
                      err=ht["gal"][1], compares="same, after a distance-based correction"))
     rows.append(dict(system="Double pulsar", register="light delay shape / predicted", Q=DOUBLE_PULSAR_S[0], err=DOUBLE_PULSAR_S[1],
                      compares="light passing the companion against orbit turn and sizes"))
@@ -751,8 +751,8 @@ def gravity_compact():
         ("Hulse–Taylor pulsar (Galaxy's pull removed)", _pulsar_pull(HULSE_TAYLOR["Pb_d"], ht["m1"] + ht["m2"]),
          ht["gal"][0], ht["gal"][1], "Binary pulsars"),
         ("Double pulsar", _pulsar_pull(0.10225156248, 1.3381 + 1.2489), DOUBLE_PULSAR_S[0], DOUBLE_PULSAR_S[1], "Binary pulsars"),
-        ("S2 at closest approach (Galactic centre)", 4.30e6 * GM_SUN / (119.5 * AU_M) ** 2, S2_REDSHIFT[-1][1],
-         float(np.hypot(*S2_REDSHIFT[-1][2:])), "Galactic centre"),
+        ("S2 at closest approach (Galactic center)", 4.30e6 * GM_SUN / (119.5 * AU_M) ** 2, S2_REDSHIFT[-1][1],
+         float(np.hypot(*S2_REDSHIFT[-1][2:])), "Galactic center"),
     ]
     return rows
 
@@ -797,7 +797,7 @@ YEAR_S = 365.25 * DAY_S
 S2_ANGLE_MAS = (125.058, 0.041)
 S2_PERIOD_YR = (16.0455, 0.0013)
 S2_FIRST_YEAR = 1992
-# Distance to the Galactic centre from different teams (pc). Each one is itself fit from the same orbits plus an ideal ellipse.
+# Distance to the Galactic center from different teams (pc). Each one is itself fit from the same orbits plus an ideal ellipse.
 GC_DISTANCES = [
     ("Keck, Do et al. 2019", 7946.0),
     ("Masers, Reid et al. 2019", 8150.0),
@@ -922,7 +922,7 @@ def mass_budget():
 
 
 # ----------------------------------------------------------------- light speed: departure from the vacuum limit
-# Q_c = measured speed of light (a signal) / the vacuum limit. The limit is an ideal: since 1983 the SI metre is
+# Q_c = measured speed of light (a signal) / the vacuum limit. The limit is an ideal: since 1983 the SI meter is
 # defined from it, so 299,792,458 m/s is exact by choice of unit and is no longer measured. What can be measured is
 # how far real light falls short of it. Every row gives the departure 1 - Q_c.
 C_MS = C_KMS * 1e3
@@ -993,7 +993,7 @@ def light_speed_table(f_ghz=1.0):
                          else "the delay's form, tested by Cassini to 1 part in 10⁵, applied here"))
     rows.append(dict(reading="Gravity vs light, GW170817", group="Vacuum tests", kind="upper limit", departure=3e-15, Q_c=np.nan,
                      measured="1.7 s between gravitational-wave and gamma-ray arrival", added="travel time from a distance (~40 Mpc)"))
-    rows.append(dict(reading="Gamma-ray colours, GRB 090510", group="Vacuum tests", kind="upper limit", departure=2e-18, Q_c=np.nan,
+    rows.append(dict(reading="Gamma-ray colors, GRB 090510", group="Vacuum tests", kind="upper limit", departure=2e-18, Q_c=np.nan,
                      measured="< 1 s between low- and 31 GeV photons", added="travel time from redshift"))
     rows.append(dict(reading="Space between galaxies (mean gas)", group="Calculated", kind="calculated",
                      departure=plasma_departure(2.2e-7, f_ghz), Q_c=1 - plasma_departure(2.2e-7, f_ghz),
@@ -1005,7 +1005,7 @@ def light_speed_table(f_ghz=1.0):
 
 
 def silica_index(lam_um):
-    """Fused silica: phase index n and group index n_g (Malitson 1965 Sellmeier fit), lam in micrometres."""
+    """Fused silica: phase index n and group index n_g (Malitson 1965 Sellmeier fit), lam in micrometers."""
     B = (0.6961663, 0.4079426, 0.8974794)
     C = (0.0684043, 0.1162414, 9.896161)
     l2 = lam_um ** 2
@@ -1023,7 +1023,7 @@ F_P_PER_SQRT_NE = 8978.66        # Hz: plasma frequency of one electron per cm^3
 
 @lru_cache(maxsize=1)
 def pulsars():
-    """ATNF pulsar catalogue v1.59: name, Galactic l and b (deg), DM, parallax and its error (mas), and where it sits."""
+    """ATNF pulsar catalog v1.59: name, Galactic l and b (deg), DM, parallax and its error (mas), and where it sits."""
     with open(os.path.join(DATA, "pulsar_dm_atnf.csv"), encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     num = lambda s: float(s) if s not in ("", None) else np.nan
@@ -1067,7 +1067,7 @@ def parallax_path_densities(min_sigma=3.0):
 def ymw16_slices():
     """YMW16 electron-density model (Yao, Manchester & Wang 2017), evaluated with pygedm and stored as log10 n_e.
 
-    Edge-on slice through the Sun and the Galactic centre, and a face-on slice through the mid-plane. The model is
+    Edge-on slice through the Sun and the Galactic center, and a face-on slice through the mid-plane. The model is
     fitted to pulsar DMs with independent distances, so it is a reading built on distances, not raw data.
     """
     z = np.load(os.path.join(DATA, "ymw16_slices.npz"))
