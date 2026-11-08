@@ -461,7 +461,8 @@ def page_outline():
     st.title("Shape: outlines (2D)")
     st.markdown(
         "**Q_a = P² / A** compares an outline's boundary length P with the area A it encloses. It has no units and does "
-        "not change with size. The ideal is a perfect circle."
+        "not change with size. The ideal is a perfect circle. This is the classical isoperimetric ratio (Osserman 1978): "
+        "no outline of a given length encloses more area than a circle, so the circle has the lowest Q_a."
     )
     tab1, tab2, tab3 = st.tabs(["Regular polygons", "Orbits", "Craters on the Moon and Mars"])
     with tab1:
@@ -1463,7 +1464,7 @@ Expansion is that kind of choice, made for the whole universe at once: it turns 
 
     st.header("2. Looming: time to contact from angles")
     st.markdown("An object coming toward you grows on the sky. Its angular size divided by its rate of growth is the **time "
-                "to contact**, τ = θ / (dθ/dt). Flies and drivers use the same quantity. Multiply τ "
+                "to contact**, τ = θ / (dθ/dt) (Lee 1976). Flies and drivers use the same quantity. Multiply τ "
                 "by the measured closing speed and you get a distance.")
     tau, rel, rate1 = R.looming(d_pick)
     _, _, rate_full = R.looming(d_pick, R.M31["theta_deg"])
@@ -1515,7 +1516,8 @@ predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too st
     st.markdown(f"**Q = {dr['Q']:.2f} ± {dr['Q_e']:.2f}.** The quasars bunch about twice as strongly as the CMB speed predicts, "
                 f"about {R.QUASAR_DIPOLE['sigma']}σ from a shared frame. Like hotspots that turn out to drift against each other, "
                 "the two best candidates for a fixed frame do not agree.")
-    st.caption("CMB dipole: Planck 2018. Quasar dipole: Secrest et al. 2021 (CatWISE2020). The ± on Q is backed out from their "
+    st.caption("CMB dipole: Planck 2018. Quasar dipole: Secrest et al. 2021 (CatWISE2020), testing the prediction of "
+               "Ellis & Baldwin (1984) that source counts should share the CMB dipole. The ± on Q is backed out from their "
                "quoted significance. The quasar frame is also used, through VLBI and Gaia, to fix directions on the sky: it pins "
                "orientation but carries no speed or position.")
 

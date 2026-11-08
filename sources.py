@@ -171,6 +171,14 @@ SOURCES = [
         ("Wadell, H. (1932). Volume, shape, and roundness of rock particles. *The Journal of Geology*, 40(5), 443–451. The shape-ratio idea behind Q_v.",
          "https://doi.org/10.1086/623964"),
     ]),
+    ("Ideas from earlier work", [
+        ('Osserman, R. (1978). The isoperimetric inequality. *Bulletin of the American Mathematical Society*, 84(6), 1182–1238. Q_a = P²/A is the classical isoperimetric ratio, lowest for a circle.',
+         'https://doi.org/10.1090/S0002-9904-1978-14553-4'),
+        ('Lee, D. N. (1976). A theory of visual control of braking based on information about time-to-collision. *Perception*, 5(4), 437–459. Time to contact τ = θ / (dθ/dt).',
+         'https://doi.org/10.1068/p050437'),
+        ('Ellis, G. F. R., & Baldwin, J. E. (1984). On the expected anisotropy of radio source counts. *Monthly Notices of the Royal Astronomical Society*, 206, 377–381. The prediction that source counts should share the CMB dipole, tested by Secrest et al. (2021).',
+         'https://doi.org/10.1093/mnras/206.2.377'),
+    ]),
 ]
 
 
