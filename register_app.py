@@ -207,7 +207,6 @@ measured from here.
         ["Acoustic angle", "Galaxy pairs", "angle shrinking as 1/z", "redshift z", "5 thin-shell angles"],
         ["Cusp", "Lensed image triplets", "a perfectly smooth lens", "opening angle", "3 radio lenses"],
         ["Light: departure from the vacuum limit", "Glass, plasma (rows near mass and vacuum tests are illustrations)", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, pulsar timing, Cassini, GW170817"],
-        ["Plasma: the medium light crosses", "Free electrons on pulsar paths, from the ionosphere to between galaxies", "an empty path (the vacuum limit)", "radio frequency, direction, height", "ATNF pulsar lags, parallaxes (the YMW16 map is an illustration)"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), wrap=True)
     st.subheader("Illustrations (not registers)")
     st.caption("These pages use an assumption, so they are not registers. They are kept to compare against the registers.")
@@ -218,6 +217,7 @@ measured from here.
         ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
         ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
         ["Mass: a reading", "Sgr A*, M87*, NGC 5548, disk galaxies", "measured part only (no assumptions)", "each assumption in turn", "GRAVITY, EHT, reverberation, SPARC"],
+        ["Plasma: the medium light crosses", "Free electrons on pulsar paths, from the ionosphere to between galaxies", "an empty path (the vacuum limit)", "radio frequency, direction, height", "ATNF pulsar lags, parallaxes (the YMW16 map is an illustration)"],
     ], columns=["Illustration", "Population", "Reference", "Read against", "Data"]), wrap=True)
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
@@ -1231,11 +1231,12 @@ PLASMA_SCALE = [[0.0, "#F7F1E6"], [0.35, brand.SAND], [0.7, brand.RUST], [1.0, "
 
 def page_plasma():
     st.header("Plasma: the medium light crosses")
+    illustration_note("Its lags are DMs fitted with the 1/f² law, and its speeds come from the plasma formula, not from a measured ratio.")
     st.markdown("""
 Space between the stars is not empty. Every path a radio signal has been timed along holds free electrons, so the
 emptiest "vacuum" anyone has measured is a very thin plasma. Plasma is a real medium for light, and it can be mapped.
 
-The register is the one from the *Light* page, read along a path: **Q_c = signal speed ÷ the vacuum limit**. In plasma a
+The reading is the one from the *Light* page, read along a path: **Q_c = signal speed ÷ the vacuum limit**. In plasma a
 signal at frequency f runs at Q_c = 1 − ½(f_p / f)², where f_p, the plasma frequency, grows as the square root of the
 electron density. So the departure **1 − Q_c grows with the density and falls with the square of the frequency**.
 
@@ -1403,12 +1404,12 @@ So plasma follows the energy supply, not the mass. The purple line is a calculat
 and an assumed cosmic-ray rate, set by the slider.
 """)
 
-    st.subheader("7. A register with two ideals: stopped and the vacuum limit")
+    st.subheader("7. A reading with two ideals: stopped and the vacuum limit")
     st.markdown("""
 For a signal, Q_c runs between two ideals: **0, stopped**, and **1, the vacuum limit**. Neither is reached. Light has been
 "stopped" in cold atom clouds, but while it is stopped it has been handed to the atoms and is not there as light.
 
-Plasma spans the whole range in one form. Written in full, the signal register is **Q_c = √(1 − (f_p / f)²)**: what sets it
+Plasma spans the whole range in one form. Written in full, the signal reading is **Q_c = √(1 − (f_p / f)²)**: what sets it
 is a ratio, the signal's frequency against the medium's own natural frequency, with no fixed number in it.
 """)
     x = np.logspace(-0.5, 2, 600)
@@ -1456,12 +1457,12 @@ is a ratio, the signal's frequency against the medium's own natural frequency, w
                      "—" if not np.isfinite(q) else f"1 + {sci(q - 1)}" if 0 < q - 1 < 1e-4 else f"{q:.4f}"
                      for q in d["Crest speed ÷ limit (1/n)"]]}), hide_index=True, width="stretch")
     st.markdown("""
-In neutral matter, solid, liquid or gas, the crest register reads *below* the vacuum ideal. In plasma it reads *above*
-it, while the signal register still reads below. The states of matter sit on opposite sides of Q = 1, each departing
+In neutral matter, solid, liquid or gas, the crest reading is *below* the vacuum ideal. In plasma it reads *above*
+it, while the signal reading is still below. The states of matter sit on opposite sides of Q = 1, each departing
 from the same ideal from its own side. Solid and liquid water sit at different readings too (ice 0.764, water 0.750).
 
-Every medium has natural frequencies of its own: its plasma frequency, and the frequencies its atoms absorb. The register
-reads differently on either side of each one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
+Every medium has natural frequencies of its own: its plasma frequency, and the frequencies its atoms absorb. The reading
+changes on either side of each one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
 At an absorption line the reading swings sharply. In a band gap (opals, photonic crystals) there is a forbidden range,
 with Q_c reading close to 0 at its edges. Different states of the same matter have different natural frequencies, so
 their boundaries sit in different places.
@@ -1473,7 +1474,7 @@ front of a signal still never beats the limit, so the 0 to 1 bounds hold for the
     st.subheader("8. What plasma is not")
     st.markdown("""
 - **Not the old ether.** The ether was meant to carry all light the same way. Plasma treats every frequency differently:
-  the lag goes as 1/frequency², measured from 40 MHz to 8 GHz in pulsars and in fast radio bursts. For visible light the
+  the lag is fitted as 1/frequency² from 40 MHz to 8 GHz in pulsars and fast radio bursts, though no single power law fits every pulsar's residuals across the band (Hassall et al. 2012). For visible light the
   departure is about 10¹¹ times smaller than at 1 GHz, so starlight crosses the Galaxy as if the plasma were not there.
 - **Not the cause of light slowing near mass.** Cassini timed the Sun's delay in two radio bands at once. The plasma part
   changed with frequency as 1/f² and was subtracted; the part from the Sun's mass was the same in both bands. The two
@@ -1640,12 +1641,12 @@ PAGE_LIST = [
     ("Light across redshift", page_angle, "Acoustic angle", "acoustic-angle"),
     ("Lensing", page_cusp, "Cusp", "cusp"),
     ("Light and its medium", page_light_speed, "Light: vacuum limit", "light-speed"),
-    ("Light and its medium", page_plasma, "Plasma: the medium light crosses", "plasma"),
     ("Illustrations (not registers)", page_rotation, "Rotation", "rotation"),
     ("Illustrations (not registers)", page_single, "Clock & deflection", "clock-deflection"),
     ("Illustrations (not registers)", page_light_matter, "Light and matter together", "light-and-matter"),
     ("Illustrations (not registers)", page_gravity, "Gravity: departure from G", "gravity"),
     ("Illustrations (not registers)", page_mass, "Mass: a reading", "mass"),
+    ("Illustrations (not registers)", page_plasma, "Plasma: the medium light crosses", "plasma"),
     ("Illustrations (not registers)", page_motion, "No fixed point", "no-fixed-point"),
     ("Sources", sources.page, "Sources", "sources"),
 ]

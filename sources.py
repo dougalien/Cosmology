@@ -140,7 +140,7 @@ SOURCES = [
          "https://doi.org/10.1038/s41586-020-2300-2"),
         ("Caselli, P., Walmsley, C. M., Terzieva, R., & Herbst, E. (1998). The ionization fraction in dense cloud cores. *The Astrophysical Journal*, 499, 234. Ionized fraction from DCO⁺/HCO⁺, 10⁻⁸ to 10⁻⁶.",
          "https://doi.org/10.1086/305624"),
-        ("Hassall, T. E., et al. (2012). Wide-band simultaneous observations of pulsars: disentangling dispersion measure and profile variations. *Astronomy & Astrophysics*, 543, A66. The 1/f² lag checked down to 40 MHz.",
+        ("Hassall, T. E., et al. (2012). Wide-band simultaneous observations of pulsars: disentangling dispersion measure and profile variations. *Astronomy & Astrophysics*, 543, A66. DMs fitted with 1/f² from 40 MHz to 8 GHz; no simple power law (exponents −5 to +5) accounts for the residuals in every band.",
          "https://doi.org/10.1051/0004-6361/201218970"),
         ("Solar wind and corona: ACE and Wind in-place densities at 1 AU; Kasper, J. C., et al. (2019), *Nature*, 576, 228 (Parker Solar Probe). Ionosphere: ionosonde critical frequencies (foF2). Orion: O'Dell, C. R. (2001), *Annual Review of Astronomy and Astrophysics*, 39, 99.", None),
     ]),
