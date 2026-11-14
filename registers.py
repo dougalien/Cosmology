@@ -294,6 +294,8 @@ def time_dilation():
     rows = _csv("stage10_real_published_time_dilation_constraints.csv")
     out = []
     for r in rows:
+        if r["study"].startswith("Goldhaber"):  # method not verified (2026-11-14), so not shown as a register
+            continue
         out.append(dict(study=r["study"], b=float(r["b"]), err=float(r["sigma_total_quadrature"]),
                         zmin=float(r["z_min"]) if r["z_min"] else None,
                         zmax=float(r["z_max"]) if r["z_max"] else None, n=r["sample_size"]))

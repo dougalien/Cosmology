@@ -183,7 +183,7 @@ measured is redshift, angle, flux and time, and the registers are written in tho
         ["Shape: solids and spheres", "Any closed body", "a perfect sphere (infinitely many faces)", "number of faces", "computed meshes"],
         ["Shape: outlines (2D)", "Polygons, craters", "a perfect circle (infinitely many sides)", "sides, diameter", "computed outlines, Robbins Moon and Mars crater catalogs"],
         ["Flux dimming", "Type Ia supernovae", "the local linear flux–redshift relation", "redshift z", "Pantheon+ raw peak magnitudes mB, heliocentric redshifts"],
-        ["Time dilation", "Type Ia supernovae", "full (1+z) stretch of light curves", "redshift z", "White (DES), Goldhaber, Blondin"],
+        ["Time dilation", "Type Ia supernovae", "full (1+z) stretch of light curves", "redshift z", "White et al. 2024 (DES), Blondin et al. 2008"],
         ["Cusp", "Lensed image triplets", "a perfectly smooth lens", "opening angle", "3 radio lenses"],
         ["Light: departure from the vacuum limit", "Glass, water, air, cold atoms", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, slow-light experiment"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), wrap=True)

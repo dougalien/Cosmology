@@ -12,6 +12,8 @@ SOURCES = [
          "https://doi.org/10.3847/1538-4357/ac8b7a"),
         ("Brout, D., et al. (2022). The Pantheon+ analysis: Cosmological constraints. *The Astrophysical Journal*, 938, 110. Source of the STAT+SYS covariance.",
          "https://doi.org/10.3847/1538-4357/ac8e04"),
+        ("Guy, J., et al. (2007). SALT2: using distant supernovae to improve the use of Type Ia supernovae as distance indicators. *Astronomy & Astrophysics*, 466, 11. §1: the flux normalization is free, so training needs no distances and no prior on cosmology.",
+         "https://doi.org/10.1051/0004-6361:20066930"),
         ("Scolnic, D. M., et al. (2018). The complete light-curve sample of spectroscopically confirmed SNe Ia from Pan-STARRS1 and cosmological constraints from the combined Pantheon sample. *The Astrophysical Journal*, 859, 101. The 40 binned Pantheon points.",
          "https://doi.org/10.3847/1538-4357/aab9bb"),
     ]),
@@ -44,7 +46,7 @@ SOURCES = [
         ("Secrest, N. J., et al. (2021). A test of the cosmological principle with quasars. *The Astrophysical Journal Letters*, 908, L51. The CatWISE2020 quasar dipole.",
          "https://doi.org/10.3847/2041-8213/abdd40"),
     ]),
-    ("Shapes, orbits and craters", [
+    ("Shapes and craters", [
         ("Robbins, S. J. (2018). Lunar Crater Database v1 (1,296,796 craters). USGS Astrogeology Science Center. Described in Robbins (2019), *Journal of Geophysical Research: Planets*, 124, 871–892, doi:10.1029/2018JE005592.",
          "https://astrogeology.usgs.gov/search/map/moon_crater_database_v1_robbins"),
         ("Robbins, S. J., & Hynek, B. M. (2012). A new global database of Mars impact craters ≥1 km: 1. Database creation, properties, and parameters. *Journal of Geophysical Research*, 117, E05004. Data: 2020 release, 385,049 craters, from craters.sjrdesign.net.",
