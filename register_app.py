@@ -120,16 +120,10 @@ def _log_ticks(fig, axis):
 
 
 # ------------------------------------------------------------------ cached data
-@st.cache_data(show_spinner="Loading Pantheon+ and its covariance…")
-def pantheon_plus_register(zcol, lo0, lo1, nbins, full_cov):
-    t, cov = R.load_pantheon_plus(full_cov)
+@st.cache_data(show_spinner="Loading Pantheon+…")
+def pantheon_plus_register(zcol, lo0, lo1, nbins):
+    t, cov = R.load_pantheon_plus()
     return R.flux_dimming_plus(t, cov, zcol=zcol, lo=(lo0, lo1), nbins=nbins)
-
-
-@st.cache_data(show_spinner="Loading DES 5-year supernovae…")
-def des_register(lo0, lo1, nbins):
-    t, cov = R.load_des5yr()
-    return R.flux_dimming_plus(t, cov, zcol="zHEL", lo=(lo0, lo1), nbins=nbins)
 
 
 @st.cache_data
@@ -157,8 +151,8 @@ def page_premise():
 A register is a measured value divided by its ideal value, so the ideal sits at **Q = 1**. The ideal is a reference
 condition: a perfect sphere, a perfect circle, a straight line, a steady clock, an exactly even series. Each of these is
 reached exactly only in a limit that takes infinity, such as infinitely many faces or the last term of an infinite series.
-Measured things sit at some distance from that reference. Some sit very close: planetary orbits are within a fraction of a
-percent of a circle, and supernova light curves stretch by the full (1 + z). Others sit far away. **The departure from the
+Measured things sit at some distance from that reference. Some sit very close: large craters are close to a circle, and
+supernova light curves stretch by the full (1 + z). Others sit far away. **The departure from the
 ideal, its size and how it changes, is the information.**
 
 #### 2. Why use registers?
@@ -187,16 +181,17 @@ measured is redshift, angle, flux and time, and the registers are written in tho
     st.subheader("The registers")
     show_table(pd.DataFrame([
         ["Shape: solids and spheres", "Any closed body", "a perfect sphere (infinitely many faces)", "number of faces", "computed meshes"],
-        ["Shape: outlines (2D)", "Polygons, orbits, craters", "a perfect circle (infinitely many sides)", "sides, eccentricity, diameter", "computed outlines, JPL, Robbins and Mars crater catalogs"],
-        ["Flux dimming", "Type Ia supernovae", "the local linear flux–redshift relation", "redshift z", "Pantheon+, DES 5-year (heliocentric redshifts)"],
-        ["Time dilation", "Transients (supernovae, quasars)", "full (1+z) stretch of light curves", "redshift z", "DES, Blondin, Lewis & Brewer"],
-        ["Aging rate", "Passive galaxies", "a steady rate of redshift change per stellar age", "redshift z", "31 cosmic chronometers"],
-        ["Acoustic angle", "Galaxy pairs", "angle shrinking as 1/z", "redshift z", "5 thin-shell angles"],
+        ["Shape: outlines (2D)", "Polygons, craters", "a perfect circle (infinitely many sides)", "sides, diameter", "computed outlines, Robbins Moon and Mars crater catalogs"],
+        ["Flux dimming", "Type Ia supernovae", "the local linear flux–redshift relation", "redshift z", "Pantheon+ raw peak magnitudes mB, heliocentric redshifts"],
+        ["Time dilation", "Type Ia supernovae", "full (1+z) stretch of light curves", "redshift z", "White (DES), Goldhaber, Blondin"],
         ["Cusp", "Lensed image triplets", "a perfectly smooth lens", "opening angle", "3 radio lenses"],
         ["Light: departure from the vacuum limit", "Glass, water, air, cold atoms", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, slow-light experiment"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), wrap=True)
-    st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
-               "an infinite series.")
+    st.caption("Left out because a model sits on the measured side: the CMB power spectrum (spherical-harmonic expansion, "
+               "an infinite series); supernova distance moduli (bias corrections simulated in flat ΛCDM, Brout et al. 2022 "
+               "§3.1); cosmic-chronometer ages (stellar population models); thin-shell acoustic angles (projection "
+               "correction computed in Planck ΛCDM, de Carvalho et al. 2021 §4.2); orbital eccentricities (fitted from "
+               "dynamical ephemerides).")
 
 
 def mini_chart(fig, xtitle, ytitle, xticks=None, yticks=None, xlog=False, ylog=False, ideal=1.0, ideal_label="ideal"):
@@ -249,11 +244,11 @@ def page_overview():
     cards.append(("Shape: outlines (2D)", fig, "Polygons close in on the circle each time their sides are doubled."))
 
     # Flux dimming
-    zf, Qf, sf, *_ = pantheon_plus_register("zHEL", 0.015, 0.06, 17, R.pantheon_cov_available())
+    zf, Qf, sf, *_ = pantheon_plus_register("zHEL", 0.015, 0.06, 17)
     fig = go.Figure(errpts(zf, Qf, sf, "Pantheon+", size=8))
     mini_chart(fig, "redshift z", "Q", xticks=[0.05, 0.1, 0.2, 0.5, 1, 2], xlog=True)
     fig.update_yaxes(range=[0.9, 1.85])
-    cards.append(("Flux dimming", fig, "Supernova light dims faster than the local linear relation as redshift grows (Pantheon+)."))
+    cards.append(("Flux dimming", fig, "Raw supernova peak magnitudes against the local linear relation (Pantheon+)."))
 
     # Time dilation
     fig = go.Figure()
@@ -268,19 +263,6 @@ def page_overview():
     mini_chart(fig, "redshift z", "stretch exponent b", ideal_label="full (1 + z) stretch")
     fig.update_xaxes(range=[0, 1.3]); fig.update_yaxes(range=[-0.15, 1.4])
     cards.append(("Time dilation", fig, "Supernova light curves stretch by the full (1 + z): the one register that sits on its ideal."))
-
-    # Aging rate
-    z, q, e, *_ = R.aging(True)
-    fig = go.Figure(errpts(z, q, e, "chronometers", size=8))
-    mini_chart(fig, "redshift z", "|dz/dt| ÷ local rate")
-    cards.append(("Aging rate", fig, "The rate of redshift change per stellar age climbs to about six times the local rate by z ≈ 2."))
-
-    # Acoustic angle
-    z, q, e = R.acoustic_angle()
-    fig = go.Figure(errpts(z, q, e, "angles", size=9, text=R.ANGLES["source"]))
-    mini_chart(fig, "redshift z", "θ·z ÷ (θ·z) at z = 0.11")
-    fig.update_yaxes(range=[0.8, 2.25])
-    cards.append(("Acoustic angle", fig, "Galaxy-pair angles follow 1/z nearby, then shrink more slowly than 1/z beyond z ≈ 1."))
 
     # Cusp
     fig = go.Figure()
@@ -362,7 +344,7 @@ def page_outline():
         "not change with size. The ideal is a perfect circle. This is the classical isoperimetric ratio (Osserman 1978): "
         "no outline of a given length encloses more area than a circle, so the circle has the lowest Q_a."
     )
-    tab1, tab2, tab3 = st.tabs(["Regular polygons", "Orbits", "Craters on the Moon and Mars"])
+    tab1, tab3 = st.tabs(["Regular polygons", "Craters on the Moon and Mars"])
     with tab1:
         levels = st.slider("Times each polygon's sides are doubled", 1, 14, 8)
         fig = go.Figure()
@@ -381,24 +363,6 @@ def page_outline():
                    "circle.")
         df = pd.DataFrame(rows).drop_duplicates("sides").sort_values("sides")
         show_table(df, fmt={"Q_a": "{:.6f}"}, names={"sides": "Sides"}, height=260)
-    with tab2:
-        rows = [dict(object=n, kind=k, eccentricity=e, Q_a=R.ellipse_q(e)) for n, k, e in R.ORBITS]
-        od = pd.DataFrame(rows)
-        od["Q_a / circle"] = od.Q_a / CIRCLE_LIMIT
-        ee = np.linspace(0, 0.995, 120)
-        fig = go.Figure(go.Scatter(x=ee, y=[R.ellipse_q(e, 4000) for e in ee], mode="lines", line=dict(color="#9AA5AB"),
-                                   name="any ellipse"))
-        for i, k in enumerate(od.kind.unique()):
-            sub = od[od.kind == k]
-            fig.add_trace(go.Scatter(x=sub.eccentricity, y=sub.Q_a, mode="markers+text", text=sub.object, textposition="top left",
-                                     marker=dict(size=10, color=PALETTE[i % len(PALETTE)]), name=k))
-        fig.add_hline(opacity=1, y=CIRCLE_LIMIT, line=dict(color=REF, dash="dash"), annotation_text="perfect circle")
-        base_layout(fig, "eccentricity", "Q_a of the orbit", ylog=True, height=480)
-        st.plotly_chart(fig, width="stretch")
-        st.dataframe(od.style.format({"eccentricity": "{:.4f}", "Q_a": "{:.6f}", "Q_a / circle": "{:.6f}"}),
-                     hide_index=True, width="stretch")
-        st.caption("Each orbit is traced as a fine polygon from its measured eccentricity (JPL). The planets sit within a "
-                   "fraction of a percent of the circle; the comets sit far above it.")
     with tab3:
         fig = go.Figure()
         for i, body in enumerate(["moon", "mars"]):
@@ -419,28 +383,16 @@ def page_outline():
 def page_flux():
     st.header("Flux dimming: how supernova light fades with redshift")
     st.markdown("Q = 10^((m − C)/5) / z: the dimming of supernova light divided by redshift, with the nearby supernovae "
-                "setting Q = 1. It is built from magnitudes (flux ratios) and heliocentric redshifts (frequency ratios).")
-    src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "DES 5-year (binned with covariance)"])
+                "setting Q = 1. It is built from peak magnitudes (flux ratios) and heliocentric redshifts (frequency ratios).")
     fig = go.Figure()
-    if src.startswith("Pantheon+"):
-        full = st.sidebar.checkbox("Use full STAT+SYS covariance", value=R.pantheon_cov_available(),
-                                   disabled=not R.pantheon_cov_available(),
-                                   help="Reads the 33 MB covariance from the manuscript folder.")
-        zcol = "zHEL"  # the measured (heliocentric) redshift: no frame or local-motion correction
-        lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
-        nb = st.sidebar.slider("Number of bins", 8, 30, 17)
-        zb, Q, sQ, n, na, nt = pantheon_plus_register(zcol, lo[0], lo[1], nb, full)
-        fig.add_trace(errpts(zb, Q, sQ, f"Pantheon+ ({nt:,} supernovae, {na:,} nearby)", text=[f"n={k}" for k in n]))
-        if st.sidebar.checkbox("Overlay DES 5-year bins", value=True):
-            zd, Qd, sQd, *_ = des_register(lo[0], lo[1], nb)
-            fig.add_trace(errpts(zd, Qd, sQd, "DES 5-year (a second survey)", color=PALETTE[0], symbol="diamond"))
-    else:
-        lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
-        nb = st.sidebar.slider("Number of bins", 8, 30, 17)
-        zd, Qd, sQd, n, na, nt = des_register(lo[0], lo[1], nb)
-        fig.add_trace(errpts(zd, Qd, sQd, f"DES 5-year ({nt:,} supernovae, {na:,} nearby)", text=[f"n={k}" for k in n]))
-        st.caption("DES 5-year: 1,635 supernovae found by the Dark Energy Survey, with nearby supernovae from other surveys "
-                   "setting Q = 1. Redshifts are heliocentric (zHEL), with no frame or local-motion correction.")
+    lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
+    nb = st.sidebar.slider("Number of bins", 8, 30, 17)
+    zb, Q, sQ, n, na, nt = pantheon_plus_register("zHEL", lo[0], lo[1], nb)
+    fig.add_trace(errpts(zb, Q, sQ, f"Pantheon+ ({nt:,} supernovae, {na:,} nearby)", text=[f"n={k}" for k in n]))
+    st.caption("m is the raw SALT2 peak magnitude mB (Scolnic et al. 2022). No bias correction, no stretch or colour "
+               "standardization and no host-mass step are applied, because the published corrected magnitudes use "
+               "simulations run in flat ΛCDM (Brout et al. 2022, §3.1). A supernova seen by several surveys counts once. "
+               "Points are plain bin means; bars are the standard error of each bin's own scatter. DES 5-year is left out: its release gives only corrected distance moduli.")
     ref_line(fig, label="local linear relation, Q = 1")
 
     base_layout(fig, "redshift z", "Q (flux dimming / z, nearby = 1)", xlog=True, height=520)
@@ -486,46 +438,6 @@ def page_time():
                names={"study": "Study", "err": "± b", "zmin": "Lowest z", "zmax": "Highest z", "n": "Objects"})
     st.caption("Light-curve widths (a time ratio) read against redshift (a frequency ratio). Studies without a "
                "redshift range in the local data are drawn as bands.")
-
-
-def page_aging():
-    st.header("Aging rate: galaxies as clocks across redshift")
-    st.markdown("Passively aging galaxies are clocks spread across redshift. Pairs of them give the change in redshift per "
-                "change in stellar age, |dz/dt|. The register divides it by the local rate, so Q = 1 would mean a steady rate.")
-    za = st.sidebar.slider("Chronometers below this redshift set the local rate", 0.1, 0.5, 0.2, 0.05)
-    z, q, e, anc, anc_e = R.aging(True, za)
-    fig = go.Figure(errpts(z, q, e, "31 cosmic chronometers"))
-    ref_line(fig, label="steady rate, Q = 1")
-    base_layout(fig, "redshift z", "|dz/dt| / local rate")
-    st.plotly_chart(fig, width="stretch")
-    st.metric("Local rate |dz/dt|", f"{anc:.4f} ± {anc_e:.4f} per billion years")
-    st.caption("Published chronometer values are quoted after a 1/(1+z) conversion that belongs to an expanding frame. "
-               "That conversion is undone here, so the register is redshift change per stellar time. "
-               "Stellar ages come from population models.")
-
-
-def page_angle():
-    st.header("Acoustic angle: the preferred angle between galaxy pairs")
-    st.markdown("In a thin redshift slice, galaxy pairs show a preferred angle. "
-                "The register is Q = θ(z)·z / (θ(z_a)·z_a): with the ideal, an angle that shrinks as 1/z, Q stays at 1.")
-    k = st.sidebar.selectbox("Anchor point", range(5), format_func=lambda i: f"z = {R.ANGLES['z'][i]}  ({R.ANGLES['source'][i]})")
-    z, q, e = R.acoustic_angle(k)
-    view = st.sidebar.radio("Show", ["Register Q", "Measured angle θ (degrees)"])
-    if view.startswith("Register"):
-        fig = go.Figure(errpts(z, q, e, "thin-shell angles", text=R.ANGLES["source"]))
-        ref_line(fig, label="angle ∝ 1/z, Q = 1")
-        base_layout(fig, "redshift z", "Q")
-    else:
-        th, et = R.ANGLES["theta"], R.ANGLES["err"]
-        fig = go.Figure(errpts(z, th, et, "measured θ", text=R.ANGLES["source"]))
-        zz = np.geomspace(0.08, 2.5, 100)
-        fig.add_trace(go.Scatter(x=zz, y=th[k] * z[k] / zz, mode="lines", line=dict(color=REF, dash="dash"), name="θ ∝ 1/z"))
-        base_layout(fig, "redshift z", "θ (degrees)", xlog=True, ylog=True)
-    st.plotly_chart(fig, width="stretch")
-    show_table(dict(z=z, theta_deg=R.ANGLES["theta"], err=R.ANGLES["err"], Q=q, dQ=e, source=R.ANGLES["source"]),
-               fmt={"z": "{:g}", "theta_deg": "{:g}", "err": "{:g}", "Q": "{:.3f}", "dQ": "{:.3f}"},
-               names={"theta_deg": "θ (degrees)", "err": "± θ", "dQ": "± Q", "source": "Source"})
-    st.caption("The five points come from different surveys and galaxy types.")
 
 
 def page_cusp():
@@ -623,7 +535,6 @@ nature; it was chosen as the best limit known, and kept fixed so that everything
                       "added": "Added"}, wrap=True)
 
 
-
 TAGLINE = "Read the shape of the universe from measurements, by comparing each measured value with its ideal."
 
 # Every page, grouped for the sidebar menu: (menu group, function, menu title, url)
@@ -635,8 +546,6 @@ PAGE_LIST = [
     ("Shape", page_outline, "Shape: outlines (2D)", "outlines"),
     ("Light across redshift", page_flux, "Flux dimming", "flux"),
     ("Light across redshift", page_time, "Time dilation", "time-dilation"),
-    ("Light across redshift", page_aging, "Aging rate", "aging"),
-    ("Light across redshift", page_angle, "Acoustic angle", "acoustic-angle"),
     ("Lensing", page_cusp, "Cusp", "cusp"),
     ("Light and its medium", page_light_speed, "Light: vacuum limit", "light-speed"),
     ("Sources", sources.page, "Sources", "sources"),
@@ -647,11 +556,9 @@ ABOUT = {
     "premise": "what a register is, why use them, and what they leave out",
     "all-registers": "every register on one screen, each against its ideal",
     "solids": "faceted solids closing in on a perfect sphere, and real bodies",
-    "outlines": "polygons, planetary orbits and craters against a perfect circle",
-    "flux": "how supernova light dims with redshift (Pantheon+, DES)",
+    "outlines": "polygons and craters against a perfect circle",
+    "flux": "how supernova light dims with redshift (Pantheon+)",
     "time-dilation": "how far distant light curves stretch",
-    "aging": "galaxies used as clocks across redshift",
-    "acoustic-angle": "the preferred angle between galaxy pairs",
     "cusp": "the brightness of lensed image triplets",
     "light-speed": "light speed in glass, water, air and cold atoms",
     "sources": "the data and papers behind every page",
@@ -680,7 +587,7 @@ def page_home():
             "measurement and divides it by its ideal value. The result is called **Q**:\n\n"
             "- **Q = 1** means the measurement matches the ideal exactly.\n"
             "- **Q above or below 1** means it departs from the ideal, and by how much.\n\n"
-            "For example, a planet's orbit can be compared with a perfect circle, or the dimming of supernova light "
+            "For example, a crater's rim can be compared with a perfect circle, or the dimming of supernova light "
             "with the simple straight-line rule seen in nearby supernovae. Because Q has no units, very different "
             "things can be read side by side. The size of each departure, and how it changes, is what the pages show.")
     st.markdown(

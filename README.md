@@ -6,7 +6,7 @@ The geometry of the universe, read from measurements. A [Dougalien Systems](http
 
 **Live app:** https://doug-cosmology.streamlit.app/
 
-A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app shows only registers: shape (solids, spheres, outlines, orbits, craters), flux dimming (Pantheon+ and DES 5-year supernovae, heliocentric redshifts), time dilation, aging rate (cosmic chronometers), the acoustic angle, cusp flux ratios, and light speed in matter as a departure from the vacuum limit. Each page shows its data and sources.
+A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app shows only registers: shape (solids, spheres, polygons, craters), flux dimming (Pantheon+ raw peak magnitudes, heliocentric redshifts), time dilation (supernovae), cusp flux ratios, and light speed in matter as a departure from the vacuum limit. Each page shows its data and sources.
 
 ## Standing order: protect the registers
 
@@ -17,7 +17,7 @@ The registers are the most important part of FDG.
 - **Registers can be used in calculations** to compare or estimate things. That work never changes a register and is never called a register.
 - Work on gravity or cosmology must not break or interfere with the registers.
 
-The app shows registers only (2026-11-14): Shape (solids, outlines), Flux dimming (Pantheon+ and DES 5-year, heliocentric redshift zHEL), Time dilation, Aging rate, Acoustic angle, Cusp, and Light speed in matter (glass, water, air, cold atoms). Earlier illustration pages (rotation, clock and deflection, light and matter, gravity, mass, plasma, no fixed point) and the light-speed rows near mass, in vacuum tests and in plasma are in git history before this change. There is no plasma register: published pulsar lags are DMs fitted with the 1/f² law (Hassall et al. 2012).
+The app shows registers only (2026-11-14): Shape (solids, polygons, craters), Flux dimming (Pantheon+ raw mB, zHEL), Time dilation (supernovae), Cusp, and Light speed in matter (glass, water, air, cold atoms). Removed because a model sits on the measured side: supernova distance moduli and DES 5-year (bias corrections simulated in flat ΛCDM, Brout et al. 2022 §3.1), cosmic-chronometer aging (stellar population ages), thin-shell acoustic angles (projection correction in Planck ΛCDM, de Carvalho et al. 2021 §4.2), orbital eccentricities (ephemeris fits), the Lewis & Brewer quasar time dilation (inputs not verified), and all earlier illustration pages. All are in git history. There is no plasma register: published pulsar lags are DMs fitted with the 1/f² law (Hassall et al. 2012).
 
 ## Run it
 
