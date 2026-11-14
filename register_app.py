@@ -153,6 +153,11 @@ SPHERE_LIMIT = 6 * np.sqrt(np.pi)  # the value the faceted sequence approaches; 
 
 
 # ------------------------------------------------------------------ pages
+def illustration_note(uses):
+    """Top-of-page label for content that uses an assumption: it is an illustration, never a register."""
+    st.info(f"**Illustration, not a register.** {uses} The registers themselves are listed under *All registers*.")
+
+
 def page_premise():
     st.header("Premise: why read the universe in registers", anchor=False)
     st.markdown("""
@@ -186,7 +191,7 @@ Galaxy there is no stationary marker to measure from. Every galaxy moves relativ
 tectonics, and the two candidate rest frames on the sky (the microwave dipole and the quasar dipole) do not agree. So
 **size, speed and distance beyond the Galaxy are calculations**, built on an assumed frame and an assumed expansion. What is
 measured is redshift, angle, flux and time, and the registers are written in those. Where a register's data still lean on a
-calculated quantity, its page says which one. The *No fixed point* page works through Andromeda as an example.
+calculated quantity, it is not a register: it is shown as an illustration and says which part is calculated. The *No fixed point* page works through Andromeda as an example.
 
 #### Together, these registers are the shape of the universe
 Each register is one population's departure from its ideal. Read side by side, they are the geometry of the universe as
@@ -201,15 +206,19 @@ measured from here.
         ["Aging rate", "Passive galaxies", "a steady rate of redshift change per stellar age", "redshift z", "31 cosmic chronometers"],
         ["Acoustic angle", "Galaxy pairs", "angle shrinking as 1/z", "redshift z", "5 thin-shell angles"],
         ["Cusp", "Lensed image triplets", "a perfectly smooth lens", "opening angle", "3 radio lenses"],
+        ["Light: departure from the vacuum limit", "Glass, plasma (rows near mass and vacuum tests are illustrations)", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, pulsar timing, Cassini, GW170817"],
+        ["Plasma: the medium light crosses", "Free electrons on pulsar paths, from the ionosphere to between galaxies", "an empty path (the vacuum limit)", "radio frequency, direction, height", "ATNF pulsar lags, parallaxes (the YMW16 map is an illustration)"],
+    ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), wrap=True)
+    st.subheader("Illustrations (not registers)")
+    st.caption("These pages use an assumption, so they are not registers. They are kept to compare against the registers.")
+    show_table(pd.DataFrame([
         ["Rotation", "Disk galaxies", "rotation set by visible matter alone", "radius / disk scale", "SPARC"],
         ["Clock", "Clocks at measured g", "frequency shift matching local g", "single value", "Pound–Rebka, lattice clocks"],
         ["Deflection", "Light passing the Sun", "light bends as matter does", "single value", "VLBI, Cassini"],
         ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
         ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
         ["Mass: a reading", "Sgr A*, M87*, NGC 5548, disk galaxies", "measured part only (no assumptions)", "each assumption in turn", "GRAVITY, EHT, reverberation, SPARC"],
-        ["Light: departure from the vacuum limit", "Glass, plasma, light near mass, vacuum tests", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, pulsar timing, Cassini, GW170817"],
-        ["Plasma: the medium light crosses", "Free electrons on pulsar paths, from the ionosphere to between galaxies", "an empty path (the vacuum limit)", "radio frequency, direction, height", "ATNF pulsar lags, parallaxes, YMW16 map"],
-    ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), wrap=True)
+    ], columns=["Illustration", "Population", "Reference", "Read against", "Data"]), wrap=True)
     st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
                "an infinite series.")
 
@@ -308,51 +317,11 @@ def page_overview():
     fig.update_xaxes(range=[25, 100]); fig.update_yaxes(range=[0, 1.15])
     cards.append(("Cusp flux ratio", fig, "In all three radio lenses the middle image is fainter than the outer pair together."))
 
-    # Rotation
-    q, gb, fd, names, ng, rr = rotation_data(0.5, 0.7, 30, 2)
-    x, y, lo, hi = R.binned_median_x(rr, q, np.logspace(-1, 1.3, 12))
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=np.r_[x, x[::-1]], y=np.r_[hi, lo[::-1]], fill="toself", fillcolor=PALETTE[0], opacity=0.18,
-                             line_width=0, hoverinfo="skip"))
-    fig.add_trace(go.Scatter(x=x, y=y, mode="lines+markers", line=dict(color=BLACK, width=2), marker=dict(size=7)))
-    mini_chart(fig, "radius ÷ disk scale length", "g_obs ÷ g_bar", xticks=[0.1, 0.3, 1, 3, 10, 20], yticks=[1, 2, 3, 5, 10],
-               xlog=True, ylog=True, ideal_label="visible matter alone")
-    cards.append(("Galaxy rotation", fig, f"Median of {ng} SPARC galaxies with the middle 68% shaded: the departure grows outward."))
-
-    # Light and matter together
-    lm = pd.DataFrame(R.light_matter_table())
-    fig = go.Figure()
-    for i, r in lm.iterrows():
-        fig.add_trace(go.Scatter(x=[r.Q], y=[r.system], mode="markers", marker=dict(size=10, color=PALETTE[i % len(PALETTE)]),
-                                 error_x=dict(type="data", array=[r.err]),
-                                 hovertemplate=f"{r.system}<br>Q = {r.Q:.5g} ± {r.err:.2g}<extra></extra>"))
-    fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=2))
-    mini_chart(fig, "light register ÷ matter register", "", ideal=None)
-    fig.update_yaxes(type="category", autorange="reversed", tickfont=dict(size=10))
-    cards.append(("Light and matter together", fig, "Where both registers are read on one object (S2, binary pulsars) they agree; "
-                  "the raw Hulse–Taylor offset is the Galaxy's pull."))
-
-    # Gravity: departure from G
-    gq, ggb, _, _ = R.gravity_galaxies()
-    gx, gy, glo, ghi, _ = R.gravity_readings(ggb, gq)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=np.r_[gx, gx[::-1]], y=np.r_[ghi, glo[::-1]], fill="toself", fillcolor=PALETTE[0], opacity=0.18,
-                             line_width=0, hoverinfo="skip"))
-    fig.add_trace(go.Scatter(x=gx, y=gy, mode="lines+markers", line=dict(color=BLACK, width=2), marker=dict(size=6)))
-    comp = R.gravity_compact()
-    fig.add_trace(go.Scatter(x=[c[1] for c in comp], y=[c[2] for c in comp], mode="markers", text=[c[0] for c in comp],
-                             marker=dict(size=9, color=PALETTE[1], symbol="diamond"), hovertemplate="%{text}<extra></extra>"))
-    mini_chart(fig, "pull from own matter (m/s²)", "Q_G", xticks=[1e-12, 1e-9, 1e-6, 1e-3, 1, 1000], yticks=[1, 2, 5, 10],
-               xlog=True, ylog=True, ideal_label="one G everywhere")
-    fig.update_xaxes(ticktext=["10⁻¹²", "10⁻⁹", "10⁻⁶", "10⁻³", "1", "10³"])
-    cards.append(("Gravity: departure from G", fig, "One G holds from neutron-star binaries to the planets; in thin galaxy "
-                  "outskirts the pull grows to several times what the visible matter gives."))
-
     for i in range(0, len(cards), 2):
         cols = st.columns(2)
         for col, (title, fig, reads) in zip(cols, cards[i:i + 2]):
             overview_card(col, title, fig, reads)
-    st.caption("The clock (Q = 1) and light deflection (Q = 2) registers are single values; see Clock & deflection.")
+    st.caption("Only registers are shown here. Pages that use an assumption are under *Illustrations (not registers)* in the menu.")
 
 
 def page_same_shape():
@@ -770,6 +739,7 @@ def page_cusp():
 
 def page_rotation():
     st.header("Galaxy rotation: observed spin against visible matter")
+    illustration_note("The visible-matter side needs a catalog distance and an assumed mass-to-light ratio.")
     st.markdown("Q = g_obs / g_bar compares the rotation a galaxy shows with the rotation its visible matter alone would give. "
                 "Q = 1 would mean visible matter accounts for all of it.")
     ud = st.sidebar.slider("Disk mass-to-light ratio", 0.2, 1.0, 0.5, 0.05)
@@ -801,7 +771,8 @@ def page_rotation():
 
 
 def page_single():
-    st.header("Clock and deflection: two single-value registers")
+    st.header("Clock and deflection")
+    illustration_note("The ideals come from theory: the clock shift g·h/c² (equivalence principle) and light bending read as 1 + γ (PPN).")
     c1, c2 = st.columns(2)
     with c1:
         st.subheader("Clock")
@@ -817,6 +788,7 @@ def page_single():
 
 def page_light_matter():
     st.header("Light and matter together")
+    illustration_note("The ideals are GR predictions: the S2 redshift parameter f, the pulsar timing formulas and the Shapiro delay.")
     st.markdown("""
 Gravity shows in two kinds of register. A **matter register** reads how a body moves: the Doppler swing of its orbit, the
 turn of the orbit, the shrinking of its period. A **light register** reads what happens to light and clocks: a steady
@@ -902,6 +874,7 @@ should: the part that disagrees is relative motion.
 
 def page_gravity():
     st.header("Gravity: departure from G")
+    illustration_note("The compact systems are read against GR/PPN predictions, and the galaxies need a catalog distance and an assumed mass-to-light ratio.")
     st.markdown("""
 FDG uses ideals for comparison, not constants. Here the ideal is **one G everywhere**: the pull a system shows equals
 the pull its own matter gives with the G measured in the lab. The register is **Q_G = pull shown ÷ pull from its own
@@ -973,6 +946,7 @@ neutron-star binaries down to the thin outer edges of galaxies.
 
 def page_mass():
     st.header("Mass: a reading, not a measurement")
+    illustration_note("It shows how much of each mass is assumed.")
     st.markdown("""
 No instrument reads a mass. What is measured is always an **angle**, a **time**, a **frequency shift** or a **flux**.
 A mass comes from multiplying that measured part by **assumed parts**: a distance, an ideal shape (a perfect ellipse,
@@ -1155,8 +1129,11 @@ The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart read
                                      options=[0.1, 0.2, 0.4, 0.7, 1.0, 1.4, 2.0, 4.0, 8.0], value=1.0)
     rows = R.light_speed_table(f_ghz)
     df = pd.DataFrame(rows)
+    # rows that add an assumption are illustrations, not part of the register
+    illus = (df.kind != "measured") | df.group.isin(["Near mass", "Vacuum tests"]) | df.added.str.contains("~")
+    df.loc[illus, "kind"] = np.where(df.loc[illus, "kind"] == "upper limit", "illustration, upper limit", "illustration")
     colors = {"Matter": PALETTE[0], "Plasma": PALETTE[1], "Near mass": PALETTE[2], "Vacuum tests": PALETTE[5], "Calculated": "#9AA5AB"}
-    symbols = {"measured": "circle", "calculated": "circle-open", "upper limit": "triangle-left"}
+    symbols = {"measured": "circle", "illustration": "circle-open", "illustration, upper limit": "triangle-left-open"}
     fig = go.Figure()
     for (grp, kind), d in df.groupby(["group", "kind"], sort=False):
         fig.add_trace(go.Scatter(
@@ -1169,25 +1146,28 @@ The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart read
     fig.update_yaxes(type="category", autorange="reversed", categoryorder="array", categoryarray=list(df.reading))
     fig.update_layout(legend=dict(orientation="h", y=-0.12))
     st.plotly_chart(fig, width="stretch")
-    st.caption("Filled: measured. Open: calculated from a measured form or an assumed density. Triangles: upper limits "
-               "(the true departure is somewhere to the left). Hover for what is measured and what is added.")
+    st.caption("Filled: register readings, measured. Open: illustrations, which add an assumption (a distance, a delay's form "
+               "or an assumed density) and are not part of the register. Triangles: illustrated upper limits. Hover for what "
+               "is measured and what is added.")
 
     st.subheader("Readings")
     c1, c2, c3 = st.columns(3)
-    c1.metric("Readings span", "19 decades", "slow light near 1, a lab vacuum at 3 × 10⁻¹⁹", delta_color="off")
+    reg = df[df.kind == "measured"]
+    c1.metric("Register readings span", f"{np.log10(reg.departure.max() / reg.departure.min()):.0f} decades",
+              "slow light near 1 to the thinnest measured plasma", delta_color="off")
     ion = df[df.reading.str.startswith("Ionosphere")].departure.iloc[0]
     c2.metric(f"Ionosphere at {f_ghz:g} GHz", sci(ion), "why GPS sends on two frequencies", delta_color="off")
-    c3.metric("Gravity and light agree to", "3 × 10⁻¹⁵", "GW170817, after ~130 million years", delta_color="off")
+    c3.metric("Gravity and light agree to", "3 × 10⁻¹⁵", "illustration: GW170817, needs a distance", delta_color="off")
     st.markdown("""
 - **Matter** gives the large departures. Q_c here is 1/n, the refractive index, read from refraction angles alone.
   Light crossing a cold atom cloud slowed to 17 m/s, and has been stopped altogether.
 - **Plasma** is everywhere in space, so radio signals always arrive late, and later at lower frequency (the lag goes as
   1/frequency²). Move the slider: the same gas departs 100 times more at 0.1 GHz than at 1 GHz. Space between the
   stars is not a vacuum; its departure is about 10⁻¹² at 1 GHz. The *Plasma* page maps where it is.
-- **Near mass** light takes longer to cross, read as the extra Cassini delay past the Sun. Spread over the path, that is a
+- *Illustration:* **near mass** light takes longer to cross, read as the extra Cassini delay past the Sun. Spread over the path, that is a
   departure of a few parts in a million at the Sun's edge. It is the same reading as the *Gravity: departure from G*
   page, seen from the light side. Measured locally the departure is zero, because the clock slows with the light.
-- **Vacuum tests** come closest. Gravity and light from one neutron-star merger arrived 1.7 s apart. Gamma rays of very
+- *Illustration:* **vacuum tests** come closest. Gravity and light from one neutron-star merger arrived 1.7 s apart. Gamma rays of very
   different energy from one burst arrived together. Both turn into a fraction only with a distance, and both compare
   one signal with another, so they show that two signals depart *together*, not that either sits at the ideal.
 """)
@@ -1336,6 +1316,7 @@ the plane average lower, as they should if the layer thins with height.
 """)
 
     st.subheader("4. The contour map")
+    st.caption("Illustration, not a register: YMW16 is a model of the Galaxy's free electrons.")
     g = R.ymw16_slices()
     levels = dict(start=-4, end=0.5, size=0.5)
     fig = make_subplots(rows=1, cols=2, column_widths=[0.45, 0.55], horizontal_spacing=0.09,
@@ -1381,10 +1362,10 @@ the Gum Nebula) are shapes the modelers chose. So the map is a reading built on 
     fig.update_yaxes(type="category", autorange="reversed", categoryorder="array", categoryarray=[r[0] for r in lad])
     st.plotly_chart(fig, width="stretch")
     rows = [dict(place=n, n_e=f"{sci(lo, 1)} – {sci(hi, 1)}", departure=f"{sci(R.plasma_departure(lo, f_ghz))} – {sci(R.plasma_departure(hi, f_ghz))}"
-                 if hi < cut else "does not pass", how=h, kind=k) for n, lo, hi, h, k in lad]
+                 if hi < cut else "does not pass", how=h, kind="illustration" if k == "calculated" else k) for n, lo, hi, h, k in lad]
     st.markdown(f"""
 Sixteen decades of density, and every one measured except the first. Between galaxies the density comes from
-fast radio bursts, but turning their lag into a density needs a distance from redshift, so it is shown in gray. At
+fast radio bursts, but turning their lag into a density needs a distance from redshift, so it is an illustration, shown in gray. At
 {f_ghz:g} GHz the departures run from about 10⁻¹⁷ to 10⁻², and to the right of the dashed line the plasma frequency is
 higher than the signal's, so the signal is turned back rather than slowed. That is why the ionosphere reflects
 short-wave radio.
@@ -1510,6 +1491,7 @@ anyone has timed is empty.
 
 def page_motion():
     st.header("No fixed point: relative motion")
+    illustration_note("It shows what is measured and what is calculated beyond the Galaxy.")
     st.markdown("""
 In plate tectonics every measurement is one plate moving against another. Absolute plate speeds only appear once a
 reference frame is chosen, such as the hotspots or a no-net-rotation frame, and even the hotspots drift. Beyond our Galaxy
@@ -1656,16 +1638,16 @@ PAGE_LIST = [
     ("Light across redshift", page_time, "Time dilation", "time-dilation"),
     ("Light across redshift", page_aging, "Aging rate", "aging"),
     ("Light across redshift", page_angle, "Acoustic angle", "acoustic-angle"),
-    ("Mass and gravity", page_cusp, "Cusp", "cusp"),
-    ("Mass and gravity", page_rotation, "Rotation", "rotation"),
-    ("Mass and gravity", page_single, "Clock & deflection", "clock-deflection"),
-    ("Mass and gravity", page_light_matter, "Light and matter together", "light-and-matter"),
-    ("Mass and gravity", page_gravity, "Gravity: departure from G", "gravity"),
-    ("Mass and gravity", page_mass, "Mass: a reading", "mass"),
+    ("Lensing", page_cusp, "Cusp", "cusp"),
     ("Light and its medium", page_light_speed, "Light: vacuum limit", "light-speed"),
     ("Light and its medium", page_plasma, "Plasma: the medium light crosses", "plasma"),
-    ("Frames and sources", page_motion, "No fixed point", "no-fixed-point"),
-    ("Frames and sources", sources.page, "Sources", "sources"),
+    ("Illustrations (not registers)", page_rotation, "Rotation", "rotation"),
+    ("Illustrations (not registers)", page_single, "Clock & deflection", "clock-deflection"),
+    ("Illustrations (not registers)", page_light_matter, "Light and matter together", "light-and-matter"),
+    ("Illustrations (not registers)", page_gravity, "Gravity: departure from G", "gravity"),
+    ("Illustrations (not registers)", page_mass, "Mass: a reading", "mass"),
+    ("Illustrations (not registers)", page_motion, "No fixed point", "no-fixed-point"),
+    ("Sources", sources.page, "Sources", "sources"),
 ]
 
 # one line on each page, for the Home page
@@ -1695,9 +1677,11 @@ GROUP_ABOUT = {
     "Start here": "The idea, and all the registers side by side.",
     "Shape": "Bodies and outlines measured against a perfect sphere or circle.",
     "Light across redshift": "What happens to light from farther and farther away.",
-    "Mass and gravity": "Lensing, spinning galaxies, clocks, orbits and what a mass reading is made of.",
+    "Lensing": "The brightness of lensed image triplets.",
     "Light and its medium": "How fast light travels, and what it travels through.",
-    "Frames and sources": "Where the measurements are taken from, and where the data come from.",
+    "Illustrations (not registers)": "Pages that use an assumption (a theory prediction, a distance, a mass-to-light ratio). "
+                                     "They compare against the registers but are never registers themselves.",
+    "Sources": "Where the data come from.",
 }
 
 
