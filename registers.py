@@ -171,7 +171,7 @@ def _pantheon_plus_table():
         cols = f.readline().split()
         rows = [l.split() for l in f if l.strip()]
     col = {c: i for i, c in enumerate(cols)}
-    return {c: np.array([float(r[col[c]]) for r in rows]) for c in ("zHD", "zCMB", "m_b_corr", "IS_CALIBRATOR", "m_b_corr_err_DIAG")}
+    return {c: np.array([float(r[col[c]]) for r in rows]) for c in ("zHD", "zCMB", "zHEL", "m_b_corr", "IS_CALIBRATOR", "m_b_corr_err_DIAG")}
 
 
 def pantheon_cov_available():
@@ -196,14 +196,14 @@ def load_des5yr():
     The release stores the inverse covariance as an upper triangle."""
     rows = [l.split() for l in open(os.path.join(DATA, "DES-Dovekie_HD.csv")) if l.startswith("SN:")]
     survey = np.array([int(r[2]) for r in rows])
-    z = np.array([float(r[3]) for r in rows])
+    z = np.array([float(r[4]) for r in rows])  # zHEL: the measured heliocentric redshift
     mu = np.array([float(r[5]) for r in rows])
     d = np.load(os.path.join(DATA, "DES-Dovekie_STAT+SYS_invcov.npz"))
     n = int(d["nsn"][0])
     ic = np.zeros((n, n))
     ic[np.triu_indices(n)] = d["cov"]
     ic = ic + ic.T - np.diag(np.diag(ic))
-    t = {"zHD": z, "zCMB": z, "m_b_corr": mu, "IS_CALIBRATOR": np.zeros(n, int), "IDSURVEY": survey}
+    t = {"zHEL": z, "m_b_corr": mu, "IS_CALIBRATOR": np.zeros(n, int), "IDSURVEY": survey}
     return t, np.linalg.inv(ic)
 
 
