@@ -120,21 +120,10 @@ def _log_ticks(fig, axis):
 
 
 # ------------------------------------------------------------------ cached data
-@st.cache_data(show_spinner="Loading Pantheon+ and its covariance…")
-def pantheon_plus_register(zcol, lo0, lo1, nbins, full_cov):
-    t, cov = R.load_pantheon_plus(full_cov)
+@st.cache_data(show_spinner="Loading Pantheon+…")
+def pantheon_plus_register(zcol, lo0, lo1, nbins):
+    t, cov = R.load_pantheon_plus()
     return R.flux_dimming_plus(t, cov, zcol=zcol, lo=(lo0, lo1), nbins=nbins)
-
-
-@st.cache_data(show_spinner="Loading DES 5-year supernovae…")
-def des_register(lo0, lo1, nbins):
-    t, cov = R.load_des5yr()
-    return R.flux_dimming_plus(t, cov, zcol="zHD", lo=(lo0, lo1), nbins=nbins)
-
-
-@st.cache_data
-def rotation_data(ud, ub, inc, qual):
-    return R.rotation(ud, ub, inc, qual)
 
 
 @st.cache_data
@@ -153,9 +142,6 @@ SPHERE_LIMIT = 6 * np.sqrt(np.pi)  # the value the faceted sequence approaches; 
 
 
 # ------------------------------------------------------------------ pages
-def illustration_note(uses):
-    """Top-of-page label for content that uses an assumption: it is an illustration, never a register."""
-    st.info(f"**Illustration, not a register.** {uses} The registers themselves are listed under *All registers*.")
 
 
 def page_premise():
@@ -165,8 +151,8 @@ def page_premise():
 A register is a measured value divided by its ideal value, so the ideal sits at **Q = 1**. The ideal is a reference
 condition: a perfect sphere, a perfect circle, a straight line, a steady clock, an exactly even series. Each of these is
 reached exactly only in a limit that takes infinity, such as infinitely many faces or the last term of an infinite series.
-Measured things sit at some distance from that reference. Some sit very close: planetary orbits are within a fraction of a
-percent of a circle, and supernova light curves stretch by the full (1 + z). Others sit far away. **The departure from the
+Measured things sit at some distance from that reference. Some sit very close: large craters are close to a circle, and
+supernova light curves stretch by the full (1 + z). Others sit far away. **The departure from the
 ideal, its size and how it changes, is the information.**
 
 #### 2. Why use registers?
@@ -190,37 +176,22 @@ Within our Galaxy, distance can be measured directly: parallax uses Earth's own 
 Galaxy there is no stationary marker to measure from. Every galaxy moves relative to every other, like plates in plate
 tectonics, and the two candidate rest frames on the sky (the microwave dipole and the quasar dipole) do not agree. So
 **size, speed and distance beyond the Galaxy are calculations**, built on an assumed frame and an assumed expansion. What is
-measured is redshift, angle, flux and time, and the registers are written in those. Where a register's data still lean on a
-calculated quantity, it is not a register: it is shown as an illustration and says which part is calculated. The *No fixed point* page works through Andromeda as an example.
-
-#### Together, these registers are the shape of the universe
-Each register is one population's departure from its ideal. Read side by side, they are the geometry of the universe as
-measured from here.
+measured is redshift, angle, flux and time, and the registers are written in those.
 """)
     st.subheader("The registers")
     show_table(pd.DataFrame([
         ["Shape: solids and spheres", "Any closed body", "a perfect sphere (infinitely many faces)", "number of faces", "computed meshes"],
-        ["Shape: outlines (2D)", "Polygons, orbits, craters", "a perfect circle (infinitely many sides)", "sides, eccentricity, diameter", "computed outlines, JPL, Robbins and Mars crater catalogs"],
-        ["Flux dimming", "Type Ia supernovae", "the local linear flux–redshift relation", "redshift z", "Pantheon, Pantheon+"],
-        ["Time dilation", "Transients (supernovae, quasars)", "full (1+z) stretch of light curves", "redshift z", "DES, Blondin, Lewis & Brewer"],
-        ["Aging rate", "Passive galaxies", "a steady rate of redshift change per stellar age", "redshift z", "31 cosmic chronometers"],
-        ["Acoustic angle", "Galaxy pairs", "angle shrinking as 1/z", "redshift z", "5 thin-shell angles"],
+        ["Shape: outlines (2D)", "Polygons, craters", "a perfect circle (infinitely many sides)", "sides, diameter", "computed outlines, Robbins Moon and Mars crater catalogs"],
+        ["Flux dimming", "Type Ia supernovae", "the local linear flux–redshift relation", "redshift z", "Pantheon+ raw peak magnitudes mB, heliocentric redshifts"],
+        ["Time dilation", "Type Ia supernovae", "full (1+z) stretch of light curves", "redshift z", "White et al. 2024 (DES), Blondin et al. 2008"],
         ["Cusp", "Lensed image triplets", "a perfectly smooth lens", "opening angle", "3 radio lenses"],
-        ["Light: departure from the vacuum limit", "Glass, plasma (rows near mass and vacuum tests are illustrations)", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, pulsar timing, Cassini, GW170817"],
+        ["Light: departure from the vacuum limit", "Glass, water, air, cold atoms", "the vacuum speed (a defined limit, never met)", "medium or path", "refractive indices, slow-light experiment"],
     ], columns=["Register", "Population", "Ideal (Q = 1)", "Read against", "Data"]), wrap=True)
-    st.subheader("Illustrations (not registers)")
-    st.caption("These pages use an assumption, so they are not registers. They are kept to compare against the registers.")
-    show_table(pd.DataFrame([
-        ["Rotation", "Disk galaxies", "rotation set by visible matter alone", "radius / disk scale", "SPARC"],
-        ["Clock", "Clocks at measured g", "frequency shift matching local g", "single value", "Pound–Rebka, lattice clocks"],
-        ["Deflection", "Light passing the Sun", "light bends as matter does", "single value", "VLBI, Cassini"],
-        ["Light and matter together", "S2, binary pulsars", "light shift equal to the matter swing squared", "system", "GRAVITY, Keck, pulsar timing"],
-        ["Gravity: departure from G", "Pulsars, the Sun, S2, disk galaxies", "one G everywhere", "pull from the system's own matter", "pulsar timing, solar-system tests, SPARC"],
-        ["Mass: a reading", "Sgr A*, M87*, NGC 5548, disk galaxies", "measured part only (no assumptions)", "each assumption in turn", "GRAVITY, EHT, reverberation, SPARC"],
-        ["Plasma: the medium light crosses", "Free electrons on pulsar paths, from the ionosphere to between galaxies", "an empty path (the vacuum limit)", "radio frequency, direction, height", "ATNF pulsar lags, parallaxes (the YMW16 map is an illustration)"],
-    ], columns=["Illustration", "Population", "Reference", "Read against", "Data"]), wrap=True)
-    st.caption("The CMB power spectrum is left out because its multipole index comes from a spherical-harmonic expansion, "
-               "an infinite series.")
+    st.caption("Left out because a model sits on the measured side: the CMB power spectrum (spherical-harmonic expansion, "
+               "an infinite series); supernova distance moduli (bias corrections simulated in flat ΛCDM, Brout et al. 2022 "
+               "§3.1); cosmic-chronometer ages (stellar population models); thin-shell acoustic angles (projection "
+               "correction computed in Planck ΛCDM, de Carvalho et al. 2021 §4.2); orbital eccentricities (fitted from "
+               "dynamical ephemerides).")
 
 
 def mini_chart(fig, xtitle, ytitle, xticks=None, yticks=None, xlog=False, ylog=False, ideal=1.0, ideal_label="ideal"):
@@ -273,11 +244,11 @@ def page_overview():
     cards.append(("Shape: outlines (2D)", fig, "Polygons close in on the circle each time their sides are doubled."))
 
     # Flux dimming
-    zf, Qf, sf, *_ = pantheon_plus_register("zCMB", 0.015, 0.06, 17, R.pantheon_cov_available())
+    zf, Qf, sf, *_ = pantheon_plus_register("zHEL", 0.015, 0.06, 17)
     fig = go.Figure(errpts(zf, Qf, sf, "Pantheon+", size=8))
     mini_chart(fig, "redshift z", "Q", xticks=[0.05, 0.1, 0.2, 0.5, 1, 2], xlog=True)
     fig.update_yaxes(range=[0.9, 1.85])
-    cards.append(("Flux dimming", fig, "Supernova light dims faster than the local linear relation as redshift grows (Pantheon+)."))
+    cards.append(("Flux dimming", fig, "Raw supernova peak magnitudes against the local linear relation (Pantheon+)."))
 
     # Time dilation
     fig = go.Figure()
@@ -292,19 +263,6 @@ def page_overview():
     mini_chart(fig, "redshift z", "stretch exponent b", ideal_label="full (1 + z) stretch")
     fig.update_xaxes(range=[0, 1.3]); fig.update_yaxes(range=[-0.15, 1.4])
     cards.append(("Time dilation", fig, "Supernova light curves stretch by the full (1 + z): the one register that sits on its ideal."))
-
-    # Aging rate
-    z, q, e, *_ = R.aging(True)
-    fig = go.Figure(errpts(z, q, e, "chronometers", size=8))
-    mini_chart(fig, "redshift z", "|dz/dt| ÷ local rate")
-    cards.append(("Aging rate", fig, "The rate of redshift change per stellar age climbs to about six times the local rate by z ≈ 2."))
-
-    # Acoustic angle
-    z, q, e = R.acoustic_angle()
-    fig = go.Figure(errpts(z, q, e, "angles", size=9, text=R.ANGLES["source"]))
-    mini_chart(fig, "redshift z", "θ·z ÷ (θ·z) at z = 0.11")
-    fig.update_yaxes(range=[0.8, 2.25])
-    cards.append(("Acoustic angle", fig, "Galaxy-pair angles follow 1/z nearby, then shrink more slowly than 1/z beyond z ≈ 1."))
 
     # Cusp
     fig = go.Figure()
@@ -321,132 +279,6 @@ def page_overview():
         cols = st.columns(2)
         for col, (title, fig, reads) in zip(cols, cards[i:i + 2]):
             overview_card(col, title, fig, reads)
-    st.caption("Only registers are shown here. Pages that use an assumption are under *Illustrations (not registers)* in the menu.")
-
-
-def page_same_shape():
-    st.header("Do the registers share one shape?")
-    st.markdown(
-        "Each redshift register is set to Q = 1 by the nearby population, so its departure from the ideal is zero by "
-        "construction for nearby light. Read from far to near, the departure shrinks toward zero as the light's path to us shortens. "
-        "That is the same pattern as the shape registers, where the departure shrinks toward zero as a body gains faces; "
-        "in both cases the zero point is a limit (a path of zero length, infinitely many faces).\n\n"
-        "To test whether the registers share a shape, plot them against **1 + z** on log–log axes. If a register is a power "
-        "of (1 + z), Q = A (1 + z)^p, its departure falls on a straight line, and p measures how quickly the departure grows "
-        "with path. The start A is read from the data: each register is set to 1 by its nearby population, which sits a "
-        "little beyond z = 0, so A is close to but not exactly 1. The same shape with a different strength gives straight "
-        "lines with different slopes."
-    )
-    zf, Qf, sf, *_ = pantheon_plus_register("zCMB", 0.015, 0.06, 17, R.pantheon_cov_available())
-    za, Qa, sa, *_ = R.aging(True)
-    zg, Qg, _ = R.acoustic_angle()
-    sg = Qg * R.ANGLES["err"] / R.ANGLES["theta"]  # each angle's own error; the start is fitted, so the anchor needs none
-    sets = {
-        "Flux dimming": (1 + zf, Qf, sf),
-        "Aging rate": (1 + za, Qa, sa),
-        "Acoustic angle": (1 + zg, Qg, sg),
-    }
-    des = next(d for d in R.time_dilation() if d["study"].startswith("White"))
-    fits = {k: R.power_fit(*v) for k, v in sets.items()}
-
-    c1, c2 = st.columns(2)
-    with c1:
-        fig = go.Figure()
-        xx = np.geomspace(1, 3.3, 50)
-        for i, (k, (x, Q, s)) in enumerate(sets.items()):
-            p, lnA = fits[k][0], fits[k][4]
-            fig.add_trace(errpts(x, Q, s, k, PALETTE[i]))
-            fig.add_trace(go.Scatter(x=xx, y=np.exp(lnA) * xx ** p, mode="lines", line=dict(color=PALETTE[i], width=1.5), name=f"(1+z)^{p:.2f}"))
-        p_t = des["b"] - 1
-        xt = np.geomspace(1 + des["zmin"], 1 + des["zmax"], 20)
-        fig.add_trace(go.Scatter(x=xt, y=xt ** p_t, mode="lines", line=dict(color=PALETTE[3], width=3),
-                                 name=f"Time dilation (DES): (1+z)^{p_t:.3f}"))
-        ref_line(fig, label="ideal, Q = 1")
-        base_layout(fig, "1 + z", "Q", xlog=True, ylog=True, height=500)
-        st.plotly_chart(fig, width="stretch")
-        st.caption("Each register with its own power of (1 + z). Straight lines on these axes mean a power law.")
-    with c2:
-        fig = go.Figure()
-        for i, (k, (x, Q, s)) in enumerate(sets.items()):
-            p, lnA = fits[k][0], fits[k][4]
-            fig.add_trace(go.Scatter(x=np.log(x), y=(np.log(Q) - lnA) / p, mode="markers", name=k, marker=dict(size=7, color=PALETTE[i]),
-                                     error_y=dict(type="data", array=s / Q / p, thickness=1)))
-        ll = np.linspace(0, 1.2, 10)
-        fig.add_trace(go.Scatter(x=ll, y=ll, mode="lines", line=dict(color=BLACK, dash="dot"), name="one shared shape"))
-        base_layout(fig, "ln(1 + z)", "(ln Q − ln A) ÷ p", height=500)
-        st.plotly_chart(fig, width="stretch")
-        st.caption("The same data with each register measured from its own start and divided by its own strength p. If they "
-                   "share one shape they collapse onto the dotted line.")
-
-    rows = [dict(register=k, exponent_p=v[0], error=v[1], start_A=np.exp(v[4]), chi2=v[2], points=v[3],
-                 chi2_per_dof=v[2] / max(v[3] - 2, 1)) for k, v in fits.items()]
-    rows.append(dict(register="Time dilation (DES)", exponent_p=des["b"] - 1, error=des["err"], start_A=np.nan, chi2=np.nan,
-                     points=1, chi2_per_dof=np.nan))
-    show_table(rows, fmt={"exponent_p": "{:.3f}", "error": "{:.3f}", "start_A": "{:.3f}", "chi2": "{:.1f}", "chi2_per_dof": "{:.2f}"},
-               names={"register": "Register", "exponent_p": "Exponent p", "error": "± p", "start_A": "Start A", "chi2": "χ²",
-                      "points": "Points", "chi2_per_dof": "χ² per degree of freedom"})
-    pc, chi_c, dof_c = R.common_power_test(list(sets.values()))
-    (pf, ef, *_), (pa, ea, *_), (pg, eg, *_) = fits["Flux dimming"], fits["Aging rate"], fits["Acoustic angle"]
-    sig_fg = abs(pf - pg) / np.hypot(ef, eg)
-    fit_note = lambda k: ("fits within its errors" if fits[k][2] / max(fits[k][3] - 2, 1) < 1.5
-                          else "follows the trend with more scatter than its quoted errors")
-    st.markdown(f"""
-**What the check says**
-
-- **Same form.** Each redshift register is close to a power of (1 + z). Flux dimming {fit_note("Flux dimming")}, the
-  acoustic angle {fit_note("Acoustic angle")}, and the aging rate {fit_note("Aging rate")}.
-- **Different strength.** Forcing one exponent on all three (each with its own start) gives p = {pc:.2f} with
-  χ² = {chi_c:.0f} for {dof_c} degrees of freedom, so one shared strength is ruled out. In order: time dilation
-  p = {des['b'] - 1:.3f} (it stays at its ideal), acoustic angle p = {pg:.2f} ± {eg:.2f}, flux dimming p = {pf:.2f} ± {ef:.2f}
-  (these two differ by {sig_fg:.1f}σ), aging rate p = {pa:.2f} ± {ea:.2f} (about {pa / pf:.1f} times flux dimming).
-- So the registers look alike because they share a form: each departure falls smoothly as the light's path shortens,
-  along a power of (1 + z), with each population at its own rate.
-- **At the far end the data do not show the departure turning back toward zero.** The largest departures are at the
-  highest redshifts. The last three flux-dimming bins (z ≈ 1.0 to 1.6) sit level near Q ≈ 1.65, which may be the first
-  sign of the departure leveling off rather than continuing to grow; more supernovae beyond z ≈ 1.5 would settle it.
-""")
-    st.caption("Each point's own error is used; correlations between points are ignored in these fits.")
-
-    st.subheader("A link between two registers: flux dimming × acoustic angle")
-    st.markdown("If the two exponents add to 1, then multiplying the two registers gives back the frequency ratio itself: "
-                "**Q_flux × Q_angle = 1 + z**. That ties how bright supernovae look to how large galaxy-pair angles look, "
-                "using redshift alone.")
-    lnAf, lnAg = fits["Flux dimming"][4], fits["Acoustic angle"][4]
-    zg1, Qg1, sg1 = zg, Qg / np.exp(lnAg), sg / np.exp(lnAg)
-    inside = zg1 <= zf.max()
-    # each register read from its own fitted start; flux at the angle redshifts from its bins where they overlap,
-    # from its power law beyond them
-    Qf_at = np.where(inside, np.exp(np.interp(np.log1p(zg1), np.log1p(zf), np.log(Qf)) - lnAf), (1 + zg1) ** pf)
-    prod = Qf_at * Qg1
-    e_prod = prod * (sg1 / Qg1)
-    c1, c2 = st.columns([3, 2])
-    with c1:
-        fig = go.Figure()
-        for mask, sym, lab in [(inside, "circle", "flux read from its bins"), (~inside, "circle-open", "flux from its power law (beyond the supernova data)")]:
-            fig.add_trace(go.Scatter(x=1 + zg1[mask], y=prod[mask], mode="markers", name=lab,
-                                     marker=dict(size=11, color=PALETTE[0], symbol=sym, line=dict(width=2, color=PALETTE[0])),
-                                     error_y=dict(type="data", array=e_prod[mask])))
-        xx = np.linspace(1, 3.4, 20)
-        fig.add_trace(go.Scatter(x=xx, y=xx, mode="lines", line=dict(color=BLACK, dash="dot"), name="Q_flux × Q_angle = 1 + z"))
-        base_layout(fig, "1 + z", "Q_flux × Q_angle (each from its own start)", height=420)
-        st.plotly_chart(fig, width="stretch")
-    with c2:
-        s_sum = np.hypot(ef, eg)
-        st.metric("Sum of exponents p_flux + p_angle", f"{pf + pg:.2f} ± {s_sum:.2f}",
-                  f"{abs(pf + pg - 1) / s_sum:.1f}σ from exactly 1", delta_color="off")
-        two = "{:.2f}"
-        show_table({"z": zg1, "Q_flux": Qf_at, "Q_angle": Qg1, "Product": prod, "1 + z": 1 + zg1, "Off by (σ)": (prod - 1 - zg1) / e_prod},
-                   fmt={k: two for k in ("z", "Q_flux", "Q_angle", "Product", "1 + z", "Off by (σ)")})
-    off = (prod - 1 - zg1) / e_prod
-    s_sig = abs(pf + pg - 1) / s_sum
-    verdict = ("add to 1 within their errors" if s_sig < 1 else
-               "come close to 1 but not within their errors" if s_sig < 3 else "do not add to 1")
-    st.caption(f"The two registers come from different populations, supernovae and galaxy pairs, measured by different surveys. "
-               f"The exponents {verdict} ({pf + pg:.2f} ± {s_sum:.2f}, {s_sig:.1f}σ from 1). Point by point, "
-               f"{int((np.abs(off) < 1).sum())} of the {len(off)} products {'is' if int((np.abs(off) < 1).sum()) == 1 else 'are'} within 1σ of 1 + z "
-               f"and {int((np.abs(off) < 2).sum())} within 2σ "
-               "(see the table). An expanding-space picture predicts the same relation, so this is a check that the two "
-               "registers agree with each other.")
 
 
 def page_shape():
@@ -487,8 +319,8 @@ def page_shape():
         st.markdown("Planets and the Sun as flattened spheres (measured flattening, level-6 mesh):")
         show_table(bd, fmt={"flattening": "{:.5f}", "Q_v": "{:.5f}", "Q_v / round body": "{:.6f}"},
                    names={"body": "Body", "flattening": "Flattening"})
-        st.caption("The last column compares each body with an unflattened body on the same mesh. Spinning bodies bulge at "
-                   "the equator, so every one sits above it; Saturn, the flattest, sits highest.")
+        st.caption("The last column compares each body with an unflattened body on the same mesh. Every one "
+                   "sits above it; Saturn, the flattest, sits highest.")
     with c2:
         rough = st.slider("Roughness of a rubble-pile body", 0.0, 0.4, 0.15, 0.01)
         seed = st.number_input("Random seed", 0, 999, 3)
@@ -512,7 +344,7 @@ def page_outline():
         "not change with size. The ideal is a perfect circle. This is the classical isoperimetric ratio (Osserman 1978): "
         "no outline of a given length encloses more area than a circle, so the circle has the lowest Q_a."
     )
-    tab1, tab2, tab3 = st.tabs(["Regular polygons", "Orbits", "Craters on the Moon and Mars"])
+    tab1, tab3 = st.tabs(["Regular polygons", "Craters on the Moon and Mars"])
     with tab1:
         levels = st.slider("Times each polygon's sides are doubled", 1, 14, 8)
         fig = go.Figure()
@@ -531,24 +363,6 @@ def page_outline():
                    "circle.")
         df = pd.DataFrame(rows).drop_duplicates("sides").sort_values("sides")
         show_table(df, fmt={"Q_a": "{:.6f}"}, names={"sides": "Sides"}, height=260)
-    with tab2:
-        rows = [dict(object=n, kind=k, eccentricity=e, Q_a=R.ellipse_q(e)) for n, k, e in R.ORBITS]
-        od = pd.DataFrame(rows)
-        od["Q_a / circle"] = od.Q_a / CIRCLE_LIMIT
-        ee = np.linspace(0, 0.995, 120)
-        fig = go.Figure(go.Scatter(x=ee, y=[R.ellipse_q(e, 4000) for e in ee], mode="lines", line=dict(color="#9AA5AB"),
-                                   name="any ellipse"))
-        for i, k in enumerate(od.kind.unique()):
-            sub = od[od.kind == k]
-            fig.add_trace(go.Scatter(x=sub.eccentricity, y=sub.Q_a, mode="markers+text", text=sub.object, textposition="top left",
-                                     marker=dict(size=10, color=PALETTE[i % len(PALETTE)]), name=k))
-        fig.add_hline(opacity=1, y=CIRCLE_LIMIT, line=dict(color=REF, dash="dash"), annotation_text="perfect circle")
-        base_layout(fig, "eccentricity", "Q_a of the orbit", ylog=True, height=480)
-        st.plotly_chart(fig, width="stretch")
-        st.dataframe(od.style.format({"eccentricity": "{:.4f}", "Q_a": "{:.6f}", "Q_a / circle": "{:.6f}"}),
-                     hide_index=True, width="stretch")
-        st.caption("Each orbit is traced as a fine polygon from its measured eccentricity (JPL). The planets sit within a "
-                   "fraction of a percent of the circle; the comets sit far above it.")
     with tab3:
         fig = go.Figure()
         for i, body in enumerate(["moon", "mars"]):
@@ -569,65 +383,20 @@ def page_outline():
 def page_flux():
     st.header("Flux dimming: how supernova light fades with redshift")
     st.markdown("Q = 10^((m − C)/5) / z: the dimming of supernova light divided by redshift, with the nearby supernovae "
-                "setting Q = 1. It is built from magnitudes (flux ratios) and redshifts (frequency ratios).")
-    src = st.sidebar.radio("Data", ["Pantheon+ (binned with covariance)", "DES 5-year (binned with covariance)",
-                                    "Pantheon 2018 (40 bins)"])
+                "setting Q = 1. It is built from peak magnitudes (flux ratios) and heliocentric redshifts (frequency ratios).")
     fig = go.Figure()
-    if src.startswith("Pantheon+"):
-        full = st.sidebar.checkbox("Use full STAT+SYS covariance", value=R.pantheon_cov_available(),
-                                   disabled=not R.pantheon_cov_available(),
-                                   help="Reads the 33 MB covariance from the manuscript folder.")
-        zcol = st.sidebar.radio("Redshift column", ["zCMB", "zHD"], horizontal=True,
-                                help="zCMB is the measured redshift in the CMB frame. zHD adds a modeled correction for local motions.")
-        lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
-        nb = st.sidebar.slider("Number of bins", 8, 30, 17)
-        zb, Q, sQ, n, na, nt = pantheon_plus_register(zcol, lo[0], lo[1], nb, full)
-        fig.add_trace(errpts(zb, Q, sQ, f"Pantheon+ ({nt:,} supernovae, {na:,} nearby)", text=[f"n={k}" for k in n]))
-        if st.sidebar.checkbox("Overlay Pantheon 2018 bins", value=True):
-            zq, Qb, _ = R.flux_dimming_binned()
-            fig.add_trace(go.Scatter(x=zq, y=Qb, mode="markers", marker=dict(color="#6B7A82", size=5), name="Pantheon 2018 bins"))
-        if st.sidebar.checkbox("Overlay DES 5-year bins", value=True):
-            zd, Qd, sQd, *_ = des_register(lo[0], lo[1], nb)
-            fig.add_trace(errpts(zd, Qd, sQd, "DES 5-year (a second survey)", color=PALETTE[0], symbol="diamond"))
-    elif src.startswith("DES"):
-        lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
-        nb = st.sidebar.slider("Number of bins", 8, 30, 17)
-        zd, Qd, sQd, n, na, nt = des_register(lo[0], lo[1], nb)
-        fig.add_trace(errpts(zd, Qd, sQd, f"DES 5-year ({nt:,} supernovae, {na:,} nearby)", text=[f"n={k}" for k in n]))
-        st.caption("DES 5-year: 1,635 supernovae found by the Dark Energy Survey, with nearby supernovae from other surveys "
-                   "setting Q = 1. Its redshifts include the release's correction for local motions (zHD).")
-    else:
-        za = st.sidebar.slider("Bins below this redshift set Q = 1", 0.02, 0.1, 0.05, 0.005)
-        zq, Qb, sQb = R.flux_dimming_binned(za)
-        fig.add_trace(errpts(zq, Qb, sQb, "Pantheon 2018 (40 bins)"))
+    lo = st.sidebar.slider("Nearby supernovae that set Q = 1 (redshift range)", 0.01, 0.12, (0.015, 0.06), 0.005)
+    nb = st.sidebar.slider("Number of bins", 8, 30, 17)
+    zb, Q, sQ, n, na, nt = pantheon_plus_register("zHEL", lo[0], lo[1], nb)
+    fig.add_trace(errpts(zb, Q, sQ, f"Pantheon+ ({nt:,} supernovae, {na:,} nearby)", text=[f"n={k}" for k in n]))
+    st.caption("m is the raw SALT2 peak magnitude mB (Scolnic et al. 2022). No bias correction, no stretch or colour "
+               "standardization and no host-mass step are applied, because the published corrected magnitudes use "
+               "simulations run in flat ΛCDM (Brout et al. 2022, §3.1). A supernova seen by several surveys counts once. "
+               "Points are plain bin means; bars are the standard error of each bin's own scatter. DES 5-year is left out: its release gives only corrected distance moduli.")
     ref_line(fig, label="local linear relation, Q = 1")
 
-    st.sidebar.markdown("**Response shapes to compare (optional)**")
-    z, m, s = R.pantheon_binned()
-    zz = np.geomspace(0.01, 2.3, 300)
-    rows = []
-    for i, (name, (fn, q0, c0, uc)) in enumerate(R.LAWS.items()):
-        if not st.sidebar.checkbox(name, value=False, key="law" + name):
-            continue
-        refit = q0 is not None and st.sidebar.checkbox("best match to the bins", key="refit" + name)
-        if q0 is None:
-            q, c = 0.0, 0.0
-        elif refit:
-            q, c = R.fit_law(fn, q0, c0, uc, z, m, s)
-        else:
-            q = st.sidebar.slider(f"q  ({name})", 0.05, 3.0, float(q0), 0.01, key="q" + name)
-            c = st.sidebar.slider("c", 0.0, 1.0, float(c0), 0.01, key="c" + name) if uc else 0.0
-        chi2, rms = R.law_stats(fn, q, c, z, m, s)
-        rows.append(dict(shape=name, q=q, c=c, chi2=chi2, dof=40 - (0 if q0 is None else 2 if uc else 1) - 1, rms_mag=rms))
-        fig.add_trace(go.Scatter(x=zz, y=fn(zz, q, c), mode="lines", line=dict(color=PALETTE[i + 1], width=2), name=f"{name}  q={q:.3f}"))
     base_layout(fig, "redshift z", "Q (flux dimming / z, nearby = 1)", xlog=True, height=520)
     st.plotly_chart(fig, width="stretch")
-    if rows:
-        show_table(rows, fmt={"q": "{:.3f}", "c": "{:.3f}", "chi2": "{:.1f}", "rms_mag": "{:.3f}"},
-                   names={"shape": "Shape", "chi2": "χ²", "dof": "Degrees of freedom", "rms_mag": "RMS (mag)"})
-        st.caption("Each shape is written in redshift alone and equals 1 for nearby supernovae. χ² and RMS are measured on "
-                   "the 40 Pantheon 2018 bins, in magnitudes, with the overall brightness level left free. These curves are "
-                   "for comparison; the register is the black points.")
 
 
 def page_time():
@@ -671,46 +440,6 @@ def page_time():
                "redshift range in the local data are drawn as bands.")
 
 
-def page_aging():
-    st.header("Aging rate: galaxies as clocks across redshift")
-    st.markdown("Passively aging galaxies are clocks spread across redshift. Pairs of them give the change in redshift per "
-                "change in stellar age, |dz/dt|. The register divides it by the local rate, so Q = 1 would mean a steady rate.")
-    za = st.sidebar.slider("Chronometers below this redshift set the local rate", 0.1, 0.5, 0.2, 0.05)
-    z, q, e, anc, anc_e = R.aging(True, za)
-    fig = go.Figure(errpts(z, q, e, "31 cosmic chronometers"))
-    ref_line(fig, label="steady rate, Q = 1")
-    base_layout(fig, "redshift z", "|dz/dt| / local rate")
-    st.plotly_chart(fig, width="stretch")
-    st.metric("Local rate |dz/dt|", f"{anc:.4f} ± {anc_e:.4f} per billion years")
-    st.caption("Published chronometer values are quoted after a 1/(1+z) conversion that belongs to an expanding frame. "
-               "That conversion is undone here, so the register is redshift change per stellar time. "
-               "Stellar ages come from population models.")
-
-
-def page_angle():
-    st.header("Acoustic angle: the preferred angle between galaxy pairs")
-    st.markdown("Galaxies prefer a fixed separation, which shows in a thin redshift slice as a preferred angle between pairs. "
-                "The register is Q = θ(z)·z / (θ(z_a)·z_a): with the ideal, an angle that shrinks as 1/z, Q stays at 1.")
-    k = st.sidebar.selectbox("Anchor point", range(5), format_func=lambda i: f"z = {R.ANGLES['z'][i]}  ({R.ANGLES['source'][i]})")
-    z, q, e = R.acoustic_angle(k)
-    view = st.sidebar.radio("Show", ["Register Q", "Measured angle θ (degrees)"])
-    if view.startswith("Register"):
-        fig = go.Figure(errpts(z, q, e, "thin-shell angles", text=R.ANGLES["source"]))
-        ref_line(fig, label="angle ∝ 1/z, Q = 1")
-        base_layout(fig, "redshift z", "Q")
-    else:
-        th, et = R.ANGLES["theta"], R.ANGLES["err"]
-        fig = go.Figure(errpts(z, th, et, "measured θ", text=R.ANGLES["source"]))
-        zz = np.geomspace(0.08, 2.5, 100)
-        fig.add_trace(go.Scatter(x=zz, y=th[k] * z[k] / zz, mode="lines", line=dict(color=REF, dash="dash"), name="θ ∝ 1/z"))
-        base_layout(fig, "redshift z", "θ (degrees)", xlog=True, ylog=True)
-    st.plotly_chart(fig, width="stretch")
-    show_table(dict(z=z, theta_deg=R.ANGLES["theta"], err=R.ANGLES["err"], Q=q, dQ=e, source=R.ANGLES["source"]),
-               fmt={"z": "{:g}", "theta_deg": "{:g}", "err": "{:g}", "Q": "{:.3f}", "dQ": "{:.3f}"},
-               names={"theta_deg": "θ (degrees)", "err": "± θ", "dQ": "± Q", "source": "Source"})
-    st.caption("The five points come from different surveys and galaxy types.")
-
-
 def page_cusp():
     st.header("Cusp flux ratio: the brightness of lensed image triplets")
     st.markdown("When a lens splits one source into a tight triplet of images, a perfectly smooth lens would make the middle "
@@ -737,379 +466,6 @@ def page_cusp():
                "together. Radio fluxes are used because they are free of dust and microlensing.")
 
 
-def page_rotation():
-    st.header("Galaxy rotation: observed spin against visible matter")
-    illustration_note("The visible-matter side needs a catalog distance and an assumed mass-to-light ratio.")
-    st.markdown("Q = g_obs / g_bar compares the rotation a galaxy shows with the rotation its visible matter alone would give. "
-                "Q = 1 would mean visible matter accounts for all of it.")
-    ud = st.sidebar.slider("Disk mass-to-light ratio", 0.2, 1.0, 0.5, 0.05)
-    ub = st.sidebar.slider("Bulge mass-to-light ratio", 0.3, 1.2, 0.7, 0.05)
-    inc = st.sidebar.slider("Minimum inclination (degrees)", 0, 60, 30, 5)
-    qual = st.sidebar.select_slider("Maximum SPARC quality flag", [1, 2, 3], 2)
-    xaxis = st.sidebar.radio("Read against", ["radius / disk scale length", "visible-matter acceleration g_bar"])
-    q, gb, fd, names, ng, rr = rotation_data(ud, ub, inc, qual)
-    fig = go.Figure()
-    if xaxis.startswith("radius"):
-        X, edges, xt = rr, np.logspace(-1, 1.3, 12), "radius / disk scale length"
-    else:
-        X, edges, xt = gb, np.logspace(-13, -8.5, 10), "visible-matter acceleration g_bar (m/s²)"
-    fig.add_trace(go.Scattergl(x=X, y=q, mode="markers", marker=dict(size=3, color="#9AA5AB", opacity=0.5), name="each radius",
-                               text=names, hovertemplate="%{text}<br>Q=%{y:.2f}<extra></extra>"))
-    x, y, lo, hi = R.binned_median_x(X, q, edges)
-    fig.add_trace(go.Scatter(x=x, y=y, mode="lines+markers", line=dict(color=BLACK, width=2), name="median (16–84%)",
-                             error_y=dict(type="data", symmetric=False, array=hi - y, arrayminus=y - lo)))
-    ref_line(fig, label="visible matter alone, Q = 1")
-    base_layout(fig, xt, "Q = g_obs / g_bar", xlog=True, ylog=True, height=560)
-    st.plotly_chart(fig, width="stretch")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Galaxies shown", ng)
-    c2.metric("Median Q inside 1 disk scale length", f"{np.nanmedian(q[rr < 1]):.2f}")
-    c3.metric("Median Q beyond 5 disk scale lengths", f"{np.nanmedian(q[rr > 5]):.1f}")
-    st.caption("Rotation speeds are Doppler shifts, which are frequency ratios, and radius over disk scale length is a ratio of "
-               "two angles on the sky. The visible-matter side needs a mass-to-light ratio and a catalog distance, set in the sidebar "
-               "and taken from SPARC.")
-
-
-def page_single():
-    st.header("Clock and deflection")
-    illustration_note("The ideals come from theory: the clock shift g·h/c² (equivalence principle) and light bending read as 1 + γ (PPN).")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.subheader("Clock")
-        st.latex(r"Q_\tau = \frac{(\Delta\nu/\nu)\,c^2}{g\,h}")
-        st.metric("Measured", "Q_τ = 1", "Pound–Rebka–Snider (~1%), lattice clocks (parts in 10⁵)", delta_color="off")
-        st.caption("Each test measures g on the spot. All of them sit at Earth's surface gravity, so this is one point for now.")
-    with c2:
-        st.subheader("Deflection")
-        st.latex(r"Q_\lambda = \frac{\alpha_{obs}}{\alpha_{traj}} = 1 + \gamma")
-        st.metric("Measured", "Q_λ = 2", "γ known to 2.3×10⁻⁵ (Cassini)", delta_color="off")
-        st.caption("Light passing the Sun bends twice as much as a body moving at the same speed would.")
-
-
-def page_light_matter():
-    st.header("Light and matter together")
-    illustration_note("The ideals are GR predictions: the S2 redshift parameter f, the pulsar timing formulas and the Shapiro delay.")
-    st.markdown("""
-Gravity shows in two kinds of register. A **matter register** reads how a body moves: the Doppler swing of its orbit, the
-turn of the orbit, the shrinking of its period. A **light register** reads what happens to light and clocks: a steady
-redshift, a clock running slow, a delay as light passes a mass. These systems give both registers for **the same object**,
-using only frequency ratios, times and angles. If gravity were a gap between the two, they would disagree here.
-They do not. **They move away from the ideal together, in a fixed proportion: the light shift is the square of the
-matter swing.** One cause sets both.
-""")
-    rows = R.light_matter_table()
-    df = pd.DataFrame(rows)
-    fig = go.Figure()
-    for i, r in df.iterrows():
-        fig.add_trace(go.Scatter(x=[r.Q], y=[r.system], mode="markers", name=r.system, showlegend=False,
-                                 marker=dict(size=10, color=PALETTE[i % len(PALETTE)]),
-                                 error_x=dict(type="data", array=[r.err], visible=True, thickness=1.5),
-                                 hovertemplate=f"{r.system}<br>Q = {r.Q:.5g} ± {r.err:.2g}<extra></extra>"))
-    fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="ideal, Q = 1",
-                  annotation_position="top")
-    base_layout(fig, "Q (light register against matter register)", "", height=420)
-    fig.update_yaxes(type="category", autorange="reversed")
-    st.plotly_chart(fig, width="stretch")
-
-    st.subheader("1. S2 at the center of the Galaxy")
-    grav, side = R.s2_predicted_shift()
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Orbital swing at closest approach", f"{R.S2_ORBIT['v_peri_kms']:.0f} km/s", "Doppler shift plus the track on the sky", delta_color="off")
-    c2.metric("Extra redshift predicted from the swing²", f"{grav + side:.0f} km/s",
-              f"{grav:.0f} gravitational + {side:.0f} from sideways motion", delta_color="off")
-    c3.metric("Measured / predicted (latest)", f"{R.S2_REDSHIFT[-1][1]:.2f} ± {df.err.iloc[2]:.2f}", "Q = 1 is the ideal", delta_color="off")
-    st.caption("The prediction needs only the swing, the orbit's shape and its tilt on the sky: frequencies and angles. "
-               "The published fits also solve for the distance to the Galactic center and the central mass at the same time, "
-               "so the quoted errors carry that fit with them.")
-
-    st.subheader("2. Binary pulsars: time only")
-    ht = R.hulse_taylor_register()
-    st.markdown("A pulsar is a clock in orbit. Its arrival times give three separate things: how fast the orbit **turns** "
-                "(matter), how much the clock **slows and speeds** around the orbit (light), and how fast the orbit "
-                "**shrinks**. The first two fix the system; the third is then a free check.")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Shrink: measured / predicted, raw", f"{ht['raw'][0]:.4f} ± {ht['raw'][1]:.4f}", "arrival times only", delta_color="off")
-    c2.metric("After removing the Galaxy's pull", f"{ht['gal'][0]:.4f} ± {ht['gal'][1]:.4f}", "this step needs a distance", delta_color="off")
-    c3.metric("Double pulsar: light delay / predicted", f"{R.DOUBLE_PULSAR_S[0]:.5f} ± {R.DOUBLE_PULSAR_S[1]:.5f}", "Kramer et al. 2006", delta_color="off")
-    st.markdown(f"""
-The raw Hulse–Taylor register sits **{(ht['raw'][0] - 1) * 100:.2f}%** above the ideal, about
-{(ht['raw'][0] - 1) / ht['raw'][1]:.0f} times its error. That offset is not in the pulsar's gravity. It is the pulsar and the
-Sun being pulled differently by the Galaxy, plus the pulsar's sideways drift. Removing it needs a distance (a calculation),
-and once removed Q sits at 1. So the measurement-only register sees exactly what the *No fixed point* page says it
-should: the part that disagrees is relative motion.
-""")
-    st.caption("Masses come out as times (the Sun's mass is 4.93 µs in these units) and cancel in every ratio. "
-               f"From the turn and the clock term: {ht['m1']:.3f} and {ht['m2']:.3f} solar masses. The only π is 2π per orbit, "
-               "which turns one orbit into radians: a unit, not a limit.")
-
-    st.subheader("3. The lock against the strength of the pull")
-    lock = [c for c in R.gravity_compact() if c[4] in ("Binary pulsars", "Galactic center")]
-    fig = go.Figure()
-    for i, (name, g, qq, e, grp) in enumerate(lock):
-        fig.add_trace(errpts([g], [qq], [e], name, color=PALETTE[i % len(PALETTE)], size=10, text=[name]))
-    fig.add_hline(y=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="ideal, Q = 1")
-    base_layout(fig, "pull from the system's own matter (m/s²)", "Q (light register against matter register)", xlog=True, height=420)
-    st.plotly_chart(fig, width="stretch")
-    span = np.log10(max(c[1] for c in lock) / min(c[1] for c in lock))
-    worst = max(abs(c[2] - 1) / c[3] for c in lock)
-    st.markdown(f"If one cause sets both registers, the lock should not depend on how strong the pull is. Across "
-                f"**{span:.1f} decades of pull** every system sits at Q = 1 within **{worst:.1f}** of its own error, with no "
-                "trend. That supports one cause; it does not say which one.")
-    st.caption("Pulsar pulls come from the orbital period and the masses, which are times, by Kepler's third law. S2's pull "
-               "uses its closest approach, which needs the distance to the Galactic center. The Hulse–Taylor point is the one "
-               "with the Galaxy's pull removed, which also needs a distance.")
-
-    st.subheader("What this says about a mechanism")
-    st.markdown("""
-- The light and matter registers are **not independent** in any system where both are read. Their ratio sits at Q = 1 to
-  7% (S2), 0.2% (Hulse–Taylor) and 0.05% (double pulsar).
-- So gravity is not the **difference** between them. It is one departure from the ideal that shows up in both, with the
-  light register as the square of the matter one.
-- A mechanism has to produce both from one cause. The clock rate (the light register) is the natural candidate, with the
-  motion of matter following from how the clock rate changes from place to place.
-""")
-    show_table(df, fmt={"Q": "{:.5f}", "err": "{:.5f}"},
-               names={"system": "System", "register": "Register", "err": "± Q", "compares": "Compares"}, wrap=True)
-
-
-def page_gravity():
-    st.header("Gravity: departure from G")
-    illustration_note("The compact systems are read against GR/PPN predictions, and the galaxies need a catalog distance and an assumed mass-to-light ratio.")
-    st.markdown("""
-FDG uses ideals for comparison, not constants. Here the ideal is **one G everywhere**: the pull a system shows equals
-the pull its own matter gives with the G measured in the lab. The register is **Q_G = pull shown ÷ pull from its own
-matter**, so Q_G = 1 means the one-G ideal holds there. Systems are read against the pull of their matter, from
-neutron-star binaries down to the thin outer edges of galaxies.
-""")
-    ud = st.sidebar.slider("Disk mass-to-light ratio (galaxies)", 0.2, 1.0, 0.5, 0.05)
-    ub = st.sidebar.slider("Bulge mass-to-light ratio (galaxies)", 0.3, 1.2, 0.7, 0.05)
-    q, gb, names, ng = R.gravity_galaxies(ud, ub)
-    x, y, lo, hi, rd = R.gravity_readings(gb, q)
-    comp = R.gravity_compact()
-
-    fig = go.Figure()
-    fig.add_trace(go.Scattergl(x=gb, y=q, mode="markers", marker=dict(size=3, color="#9AA5AB", opacity=0.45),
-                               name=f"galaxies, each radius ({ng} galaxies)", text=names,
-                               hovertemplate="%{text}<br>pull from matter %{x:.2e} m/s²<br>Q_G=%{y:.2f}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=x, y=y, mode="lines+markers", line=dict(color=BLACK, width=2.5), name="galaxies, median (16–84%)",
-                             error_y=dict(type="data", symmetric=False, array=hi - y, arrayminus=y - lo)))
-    groups = {}
-    for name, g, qq, e, grp in comp:
-        groups.setdefault(grp, []).append((name, g, qq, e))
-    symbols = {"Solar System": "circle", "Binary pulsars": "diamond", "Galactic center": "star"}
-    for i, (grp, rows) in enumerate(groups.items()):
-        fig.add_trace(go.Scatter(x=[r[1] for r in rows], y=[r[2] for r in rows], mode="markers", name=grp,
-                                 marker=dict(size=12, color=PALETTE[i], symbol=symbols.get(grp, "circle"), line=dict(color="white", width=1)),
-                                 error_y=dict(type="data", array=[r[3] for r in rows], visible=True), text=[r[0] for r in rows],
-                                 hovertemplate="%{text}<br>pull %{x:.2e} m/s²<br>Q_G=%{y:.5f}<extra></extra>"))
-    # on log axes, annotations are placed in log10 units
-    fig.add_hline(opacity=1, y=1.0, line=dict(color=REF, dash="dash", width=1.5))
-    fig.add_annotation(text="one G everywhere, Q_G = 1", xref="paper", x=1, xanchor="right", y=0, yanchor="bottom",
-                       showarrow=False, font=dict(color=REF, size=12))
-    for k, (level, dash) in enumerate(((1.5, "dot"), (2.0, "dash"))):
-        if level in rd:
-            fig.add_vline(opacity=1, x=rd[level], line=dict(color=brand.RUST, dash=dash, width=1.2))
-            fig.add_annotation(text=f"Q_G = {level:g}", x=np.log10(rd[level]), xanchor="left", yref="paper", y=1 - 0.05 * k,
-                               showarrow=False, font=dict(color=brand.RUST, size=12))
-    base_layout(fig, "pull from the system's own matter (m/s²)", "Q_G = pull shown ÷ pull from its own matter",
-                xlog=True, ylog=True, height=600)
-    fig.update_xaxes(range=[-12.7, 3.2])
-    fig.update_yaxes(range=[np.log10(0.6), np.log10(25)])
-    st.plotly_chart(fig, width="stretch")
-
-    st.subheader("Readings")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Q_G reaches 1.5 at a pull of", f"{sci(rd.get(1.5, float('nan')))} m/s²", "a reading, not an input", delta_color="off")
-    c2.metric("Q_G reaches 2 at a pull of", f"{sci(rd.get(2.0, float('nan')))} m/s²", "a reading, not an input", delta_color="off")
-    c3.metric("Slope in the thinnest matter", f"{rd['slope']:.2f}".replace("-", "−"), "log Q_G per log pull, below 10⁻¹¹ m/s²",
-              delta_color="off")
-    st.markdown(f"""
-- From neutron-star binaries to the outer Solar System, about **eleven decades of pull**, Q_G stays at 1 to between
-  1 part in 1,000 and 1 part in 100,000.
-- In galaxies Q_G stays near 1 while the matter is dense, then leaves 1 as the matter thins. It reaches 2 at a
-  pull of about {sci(rd.get(2.0, float('nan')), 1)} m/s² and keeps rising. Where it leaves 1 is a reading of this register, the
-  same kind of reading as the exponent in the redshift registers.
-- Gravity is therefore not one fixed G at every scale. It holds the ideal where matter is concentrated and departs
-  from it where matter is thin.
-""")
-    show_table([dict(system=n, pull_m_s2=g, Q_G=qq, error=e, group=grp) for n, g, qq, e, grp in comp],
-               fmt={"pull_m_s2": lambda v: sci(v, 3), "Q_G": "{:.5f}", "error": sci},
-               names={"system": "System", "pull_m_s2": "Pull from its own matter (m/s²)", "error": "± Q_G", "group": "Group"})
-    st.caption("Compact systems: each Q is the published ratio of a measured effect to its one-G prediction, with the mass "
-               "taken from the same system's orbits. Their pulls use radar distances in the Solar System and orbit sizes "
-               "from timing; S2's uses the distance to the Galactic center. Galaxies: rotation is a Doppler shift, and the pull "
-               "from visible matter comes from light and gas with the mass-to-light ratios set in the sidebar. The catalog "
-               "distance cancels out of that pull but still scales Q_G, so the galaxy points carry the catalog distance and the "
-               "mass-to-light ratio as their calculated parts. The ideal itself is uncertain: lab measurements of G disagree "
-               "by several parts in 10,000.")
-
-
-def page_mass():
-    st.header("Mass: a reading, not a measurement")
-    illustration_note("It shows how much of each mass is assumed.")
-    st.markdown("""
-No instrument reads a mass. What is measured is always an **angle**, a **time**, a **frequency shift** or a **flux**.
-A mass comes from multiplying that measured part by **assumed parts**: a distance, an ideal shape (a perfect ellipse,
-a perfect circle, a disk seen at a tilt), a steady state, and a calibration borrowed from other objects. This page keeps
-the two apart. Every slider is an assumption; the measured part never moves.
-
-Even for the Sun the reading is **G·M**, known to about ten digits from the planets' orbits. Turning it into kilograms
-needs G, and lab measurements of G disagree by several parts in 10,000. So every mass below is given as a **ratio to
-the Sun's G·M**, which cancels G. Each one is then a comparison, not a constant.
-""")
-    budget = R.mass_budget()
-    st.subheader("How much of each mass is measured")
-    fig = go.Figure()
-    colors = {"measured": "#2E7D6B", "assumed": brand.RUST, "changes": "#7A5195"}
-    labels = [f"{o} · {what}" for o, what, _ in budget]
-    for kind, col in colors.items():
-        sel = [(lab, (f - 1) * 100) for (o, what, f), lab in zip(budget, labels) if what.startswith(kind)]
-        if sel:
-            fig.add_trace(go.Bar(x=[v for _, v in sel], y=[l for l, _ in sel], orientation="h", name=kind, marker_color=col,
-                                 hovertemplate="%{y}<br>± %{x:.3g}%<extra></extra>"))
-    base_layout(fig, "spread it puts on the mass (± %, log scale)", "", xlog=True, height=560)
-    fig.update_xaxes(tickvals=[1e-8, 1e-6, 1e-4, 1e-2, 1, 100],
-                     ticktext=["0.00000001%", "0.000001%", "0.0001%", "0.01%", "1%", "100%"])
-    fig.update_yaxes(type="category", categoryorder="array", categoryarray=labels[::-1])
-    fig.update_layout(barmode="overlay")
-    st.plotly_chart(fig, width="stretch")
-    st.caption("Measured: the published error on the angles, times and Doppler shifts. Assumed: half the range between the "
-               "lowest and highest values in use (distances from different teams, shape factors, calibrations, lab G). "
-               "Changes: the same measurement repeated in different years.")
-    st.markdown("""
-- The **measured part is the small part** everywhere except the Sun. For Sgr A* the angles and period are good to 0.1%;
-  the distance, which goes in cubed, adds six times more.
-- For M87* and quasars the biggest spread is **which recipe** or **which calibration** is chosen, not the data.
-- In NGC 5548 the measurement itself **changes**: the lag is different every year, so a single mass is an average over
-  a system that never holds still.
-""")
-
-    st.subheader("How much of the motion has been watched")
-    cyc = R.cycles_seen()
-    fig = go.Figure(go.Bar(x=[c[1] for c in cyc], y=[c[0] for c in cyc], orientation="h", marker_color=BLACK,
-                           hovertemplate="%{y}<br>%{x:.2g} of one orbit<extra></extra>"))
-    fig.add_vline(opacity=1, x=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="one full orbit",
-                  annotation_position="top")
-    base_layout(fig, "fraction of one full orbit watched (log scale)", "", xlog=True, height=360)
-    fig.update_yaxes(type="category", autorange="reversed")
-    st.plotly_chart(fig, width="stretch")
-    st.caption("A mass from orbits assumes the orbit closes and repeats. Only around the Sun and Sgr A* has a whole orbit "
-               "been seen. For a galaxy's outer disk we have watched about one twenty-millionth of a turn: the rotation is "
-               "a snapshot, and steady circular motion is an assumption. The orbit times here are themselves calculations "
-               "from the same assumed masses and distances, so treat them as rough.")
-
-    st.subheader("1. Sgr A*: angles and a period")
-    th3p2, e = R.sgr_a_measured_part()
-    d = st.slider("Assumed distance to the Galactic center (pc)", 7800, 8400, 8178, 1)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Measured: angle³ / period² (arcsec³/yr²)", sci(th3p2, 5), f"± {e * 100:.2f}%", delta_color="off")
-    c2.metric("Assumed: distance³ (pc³)", sci(d ** 3, 4), "AU per arcsec is the distance in pc", delta_color="off")
-    c3.metric("Reading (million Suns)", f"{R.mass_sgr_a(d) / 1e6:.3f}", "G cancels in Sun units", delta_color="off")
-    ds = np.linspace(7800, 8400, 61)
-    fig = go.Figure(go.Scatter(x=ds, y=R.mass_sgr_a(ds) / 1e6, mode="lines", line=dict(color=BLACK, width=2),
-                               name="same angles and period, any distance"))
-    fig.add_trace(go.Scatter(x=[x for _, x in R.GC_DISTANCES], y=[R.mass_sgr_a(x) / 1e6 for _, x in R.GC_DISTANCES],
-                             mode="markers+text", text=[n for n, _ in R.GC_DISTANCES], textposition="top left",
-                             marker=dict(size=10, color=brand.RUST), name="distances in use"))
-    base_layout(fig, "assumed distance (pc)", "mass (million Suns)", height=400)
-    st.plotly_chart(fig, width="stretch")
-    st.caption("The angle and period come from GRAVITY (2020). Teams fit the distance from the same orbit by matching the "
-               "Doppler speed (km/s) to the motion across the sky (mas/yr), which assumes the orbit is a perfect closed "
-               "ellipse around a point. The mass goes as the cube of that distance.")
-
-    st.subheader("2. M87*: one ring angle")
-    c1, c2 = st.columns(2)
-    alpha = c1.slider("Assumed ring-to-mass shape factor", 9.5, 12.5, 11.0, 0.1, format="%g",
-                      help="Ring diameter in units of GM/(D c²). A perfect circular shadow of a non-spinning hole gives 10.39.")
-    dm = c2.slider("Assumed distance to M87 (Mpc)", 15.0, 18.5, 16.8, 0.1, format="%g")
-    rows = []
-    for name, ring, er in R.M87_RING:
-        rows.append(dict(reading=f"{name}: {ring:.1f} ± {er:.1f} µas", mass_billion=R.mass_m87(ring, alpha, dm) / 1e9))
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Measured: ring diameter (2017)", "42 ± 3 µas", "2018: 43.3 µas, bright side turned ~30°", delta_color="off")
-    c2.metric("Reading with your assumptions (billion Suns)", f"{rows[0]['mass_billion']:.2f}", delta_color="off")
-    c3.metric("With the ideal circle, 10.39 (billion Suns)", f"{R.mass_m87(42.0, R.M87_ALPHA_IDEAL, dm) / 1e9:.2f}",
-              "the ideal is a comparison, not the answer", delta_color="off")
-    fig = go.Figure()
-    for i, (name, m, up, dn) in enumerate(R.M87_OTHER):
-        fig.add_trace(go.Scatter(x=[m / 1e9], y=[name], mode="markers", marker=dict(size=11, color=PALETTE[i]), showlegend=False,
-                                 error_x=dict(type="data", symmetric=False, array=[up / 1e9], arrayminus=[dn / 1e9])))
-    fig.add_vline(opacity=1, x=rows[0]["mass_billion"], line=dict(color=BLACK, dash="dot"), annotation_text="your reading",
-                  annotation_position="top")
-    base_layout(fig, "mass (billion Suns, at 16.8 Mpc)", "", height=320)
-    fig.update_yaxes(type="category")
-    st.plotly_chart(fig, width="stretch")
-    st.caption("Same object, three recipes. Gas motions and star motions disagree by nearly a factor of two, each with "
-               "its own model of how the gas or stars move. The ring itself changed between 2017 and 2018.")
-
-    st.subheader("3. NGC 5548: a delay and a line width")
-    c1, c2 = st.columns(2)
-    lag = c1.slider("Lag in the year you pick (days)", float(R.NGC5548_LAG_D[0]), float(R.NGC5548_LAG_D[1]), 15.0, 0.1, format="%g")
-    f = c2.select_slider("Assumed virial factor f", [v for _, v in R.VIRIAL_F], value=6.3,
-                         format_func=lambda v: f"{v} ({dict((b, a) for a, b in R.VIRIAL_F)[v]})")
-    m = R.mass_reverb(lag, R.NGC5548_WIDTH, f)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Measured: lag", f"{lag:.1f} days", f"has ranged {R.NGC5548_LAG_D[0]}–{R.NGC5548_LAG_D[1]} days", delta_color="off")
-    c2.metric("Measured: line width", f"{R.NGC5548_WIDTH:.0f} km/s", "Doppler spread, round value", delta_color="off")
-    c3.metric("Reading (10⁷ Suns)", f"{m / 1e7:.1f}", "lag × width² × f", delta_color="off")
-    lags = np.linspace(R.NGC5548_LAG_D[0], R.NGC5548_LAG_D[1], 50)
-    fig = go.Figure()
-    for i, (name, fv) in enumerate(R.VIRIAL_F):
-        fig.add_trace(go.Scatter(x=lags, y=R.mass_reverb(lags, R.NGC5548_WIDTH, fv) / 1e7, mode="lines",
-                                 line=dict(color=PALETTE[i], width=2), name=f"f = {fv} ({name})"))
-    fig.add_hrect(y0=(R.NGC5548_MEAN_MASS[0] - R.NGC5548_MEAN_MASS[1]) / 1e7, y1=(R.NGC5548_MEAN_MASS[0] + R.NGC5548_MEAN_MASS[1]) / 1e7,
-                  fillcolor="#9AA5AB", opacity=0.3, line_width=0, annotation_text="published mean over years (f = 6.3)",
-                  annotation_position="top left")
-    base_layout(fig, "lag (days)", "mass (10⁷ Suns)", height=420)
-    st.plotly_chart(fig, width="stretch")
-    st.caption("Lags across campaigns from Lu et al. (2016, Table 4). When the lag grows the line narrows, which is why the "
-               "published mean holds steady: that steadiness is the virial assumption at work. f is never measured in NGC 5548; "
-               "it is borrowed from galaxies where a different mass recipe was used.")
-
-    st.subheader("4. A disk galaxy: a Doppler swing and an outline")
-    gal, _ = R.sparc_tables()
-    names = sorted(n for n, g in gal.items() if g["Q"] == 1 and g["inc"] >= 30)
-    name = st.selectbox("Galaxy (SPARC, quality 1)", names, index=names.index("NGC3198"))
-    gx = R.sparc_galaxy(name)
-    c1, c2, c3 = st.columns(3)
-    inc = c1.slider("Assumed tilt (degrees)", 30.0, 89.0, float(gx["inc"]), 0.5, format="%g",
-                    help=f"Catalog: {gx['inc']:.0f} ± {gx['eInc']:.0f}°, from the outline read as a perfect circle seen at a tilt.")
-    dd = c2.slider("Assumed distance (Mpc)", max(0.5, gx["D"] * 0.6), gx["D"] * 1.4, float(gx["D"]), 0.1, format="%.1f",
-                   help=f"Catalog: {gx['D']} ± {gx['eD']} Mpc")
-    ml = c3.slider("Assumed mass-to-light ratio (visible mass)", 0.2, 1.0, 0.5, 0.05, format="%g")
-    gm = R.galaxy_mass(gx, inc, dd, ml)
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Measured: line-of-sight swing", f"{gm['vlos']:.0f} km/s", "at the last measured radius", delta_color="off")
-    c2.metric("Mass from motion (Suns)", sci(gm['motion'], 3), f"v = {gm['v']:.0f} km/s, R = {gm['R_kpc']:.1f} kpc", delta_color="off")
-    c3.metric("Mass from light and gas (Suns)", sci(gm['visible'], 3), "goes as distance²", delta_color="off")
-    c4.metric("Motion ÷ visible", f"{gm['motion'] / gm['visible']:.1f}", "goes as 1 / distance", delta_color="off")
-    incs = np.linspace(max(30, gx["inc"] - 20), min(89, gx["inc"] + 15), 60)
-    ms = [R.galaxy_mass(gx, i, dd, ml)["motion"] for i in incs]
-    fig = go.Figure(go.Scatter(x=incs, y=ms, mode="lines",
-                               line=dict(color=BLACK, width=2), name="mass from motion"))
-    fig.add_vrect(x0=gx["inc"] - gx["eInc"], x1=gx["inc"] + gx["eInc"], fillcolor="#9AA5AB", opacity=0.3, line_width=0,
-                  annotation_text="catalog tilt ± error", annotation_position="top left")
-    fig.add_trace(go.Scatter(x=[incs[0], incs[-1]], y=[gm["visible"]] * 2, mode="lines", line=dict(color=brand.RUST, dash="dash", width=2),
-                             name="mass from light and gas (does not depend on tilt)"))
-    base_layout(fig, "assumed tilt (degrees)", "mass inside the last radius (Suns)", ylog=True, height=420)
-    fig.update_yaxes(range=[np.log10(min(min(ms), gm["visible"]) * 0.7), np.log10(max(max(ms), gm["visible"]) * 1.4)])
-    st.plotly_chart(fig, width="stretch")
-    st.caption("Only the Doppler shift along the line of sight is measured. Rotation speed = swing ÷ sin(tilt), so the "
-               "tilt matters most for galaxies seen nearly face-on. Real disks are oval, warped and lopsided, so the "
-               "circle-seen-at-a-tilt is an ideal. The 'missing mass' ratio in the last metric changes with the assumed "
-               "distance and mass-to-light ratio, and the visible mass uses 1.33 × the hydrogen mass for gas.")
-
-    st.subheader("What this says")
-    st.markdown("""
-- A mass is a **reading assembled from measured ratios and chosen ideals**. The measured part is usually the small part
-  of the spread.
-- In solar units G cancels, so masses are **comparisons with the Sun**, not values against a constant.
-- The closer the object, and the more of its motion we have watched, the more the reading rests on measurement.
-  Sgr A* is the best case and still carries a distance cubed. A galaxy's mass rests on a snapshot of less than one
-  millionth of a turn, a tilt read from an ideal circle, and a distance.
-""")
-
-
 def page_light_speed():
     st.header("Light: departure from the vacuum limit")
     st.markdown("""
@@ -1118,20 +474,13 @@ Light speed is called a constant, but no light anyone has measured moves at it. 
 - **A unit choice.** Since 1983 the meter has been *defined* as the distance light travels in vacuum in
   1/299,792,458 of a second. So 299,792,458 m/s is exact by definition and can no longer be measured. Every speed
   measured since is already a ratio to it.
-- **A local claim.** Where time deforms, rulers deform with it, so a measurement made in one place always gives the
-  same number. The departure only shows when two places are compared, as in the extra delay of light passing the Sun.
 
 A pure vacuum is never found. So, as everywhere in FDG, the vacuum speed is an **ideal**, a limit for comparison.
 The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart reads how far each case falls short of it,
 **1 − Q_c**. Nothing that carries a signal has ever been measured above it.
 """)
-    f_ghz = st.sidebar.select_slider("Radio frequency for the plasma rows (GHz)",
-                                     options=[0.1, 0.2, 0.4, 0.7, 1.0, 1.4, 2.0, 4.0, 8.0], value=1.0)
-    rows = R.light_speed_table(f_ghz)
+    rows = [r for r in R.light_speed_table() if r["group"] == "Matter"]  # measured ratios only
     df = pd.DataFrame(rows)
-    # rows that add an assumption are illustrations, not part of the register
-    illus = (df.kind != "measured") | df.group.isin(["Near mass", "Vacuum tests"]) | df.added.str.contains("~")
-    df.loc[illus, "kind"] = np.where(df.loc[illus, "kind"] == "upper limit", "illustration, upper limit", "illustration")
     colors = {"Matter": PALETTE[0], "Plasma": PALETTE[1], "Near mass": PALETTE[2], "Vacuum tests": PALETTE[5], "Calculated": "#9AA5AB"}
     symbols = {"measured": "circle", "illustration": "circle-open", "illustration, upper limit": "triangle-left-open"}
     fig = go.Figure()
@@ -1146,52 +495,16 @@ The register is **Q_c = measured speed ÷ the vacuum limit**, and the chart read
     fig.update_yaxes(type="category", autorange="reversed", categoryorder="array", categoryarray=list(df.reading))
     fig.update_layout(legend=dict(orientation="h", y=-0.12))
     st.plotly_chart(fig, width="stretch")
-    st.caption("Filled: register readings, measured. Open: illustrations, which add an assumption (a distance, a delay's form "
-               "or an assumed density) and are not part of the register. Triangles: illustrated upper limits. Hover for what "
-               "is measured and what is added.")
+    st.caption("Every reading is measured. Hover for what is measured.")
 
     st.subheader("Readings")
     c1, c2, c3 = st.columns(3)
     reg = df[df.kind == "measured"]
     c1.metric("Register readings span", f"{np.log10(reg.departure.max() / reg.departure.min()):.0f} decades",
-              "slow light near 1 to the thinnest measured plasma", delta_color="off")
-    ion = df[df.reading.str.startswith("Ionosphere")].departure.iloc[0]
-    c2.metric(f"Ionosphere at {f_ghz:g} GHz", sci(ion), "why GPS sends on two frequencies", delta_color="off")
-    c3.metric("Gravity and light agree to", "3 × 10⁻¹⁵", "illustration: GW170817, needs a distance", delta_color="off")
+              "slow light near 1 to air", delta_color="off")
     st.markdown("""
 - **Matter** gives the large departures. Q_c here is 1/n, the refractive index, read from refraction angles alone.
   Light crossing a cold atom cloud slowed to 17 m/s, and has been stopped altogether.
-- **Plasma** is everywhere in space, so radio signals always arrive late, and later at lower frequency (the lag goes as
-  1/frequency²). Move the slider: the same gas departs 100 times more at 0.1 GHz than at 1 GHz. Space between the
-  stars is not a vacuum; its departure is about 10⁻¹² at 1 GHz. The *Plasma* page maps where it is.
-- *Illustration:* **near mass** light takes longer to cross, read as the extra Cassini delay past the Sun. Spread over the path, that is a
-  departure of a few parts in a million at the Sun's edge. It is the same reading as the *Gravity: departure from G*
-  page, seen from the light side. Measured locally the departure is zero, because the clock slows with the light.
-- *Illustration:* **vacuum tests** come closest. Gravity and light from one neutron-star merger arrived 1.7 s apart. Gamma rays of very
-  different energy from one burst arrived together. Both turn into a fraction only with a distance, and both compare
-  one signal with another, so they show that two signals depart *together*, not that either sits at the ideal.
-""")
-
-    st.subheader("Color changes the reading")
-    lam = np.linspace(0.25, 2.0, 300)
-    n, ng = R.silica_index(lam)
-    fr = np.logspace(-1, 1, 200)
-    fig = make_subplots(rows=1, cols=2, subplot_titles=("Glass (fused silica): Q_c against wavelength",
-                                                        "Plasma: 1 − Q_c against radio frequency"))
-    fig.add_trace(go.Scatter(x=lam, y=1 / n, name="crest of the wave (phase, 1/n)", line=dict(color=PALETTE[0], width=2.5)), 1, 1)
-    fig.add_trace(go.Scatter(x=lam, y=1 / ng, name="a pulse, the signal (group, 1/n_g)", line=dict(color=BLACK, width=2.5)), 1, 1)
-    for i, (name, ne, _) in enumerate(R.PLASMAS):
-        fig.add_trace(go.Scatter(x=fr, y=R.plasma_departure(ne, fr), name=name, line=dict(color=PALETTE[(i + 1) % len(PALETTE)], width=2)), 1, 2)
-    fig.update_xaxes(title="wavelength (µm)", row=1, col=1, showgrid=True, gridcolor="#E3E6E5")
-    fig.update_yaxes(title="Q_c", row=1, col=1, showgrid=True, gridcolor="#E3E6E5")
-    fig.update_xaxes(title="frequency (GHz)", type="log", row=1, col=2, showgrid=True, gridcolor="#E3E6E5")
-    fig.update_yaxes(title="1 − Q_c", type="log", exponentformat="power", row=1, col=2, showgrid=True, gridcolor="#E3E6E5")
-    fig.update_layout(height=460, template="simple_white", margin=dict(l=60, r=20, t=50, b=50), legend=dict(orientation="h", y=-0.25))
-    st.plotly_chart(fig, width="stretch")
-    st.markdown("""
-There is no single "speed of light in glass": it depends on color, and a pulse moves slower than the wave crests inside
-it. In an optical fiber at 1.55 µm a signal runs at about 0.68 of the limit. In plasma the crests run *faster* than the
-limit while the signal runs slower; only the signal carries information, and it never passes Q_c = 1.
 """)
 
     st.subheader("How the ideal was fixed")
@@ -1220,409 +533,6 @@ nature; it was chosen as the best limit known, and kept fixed so that everything
                fmt={"departure": sci, "Q_c": lambda q: "≈ 1" if 1 - q < 1e-5 else sci(q, 4)},
                names={"reading": "Reading", "group": "Group", "kind": "Kind", "departure": "1 − Q_c", "measured": "Measured",
                       "added": "Added"}, wrap=True)
-    st.caption("Plasma departures use the signal (group) speed, c(1 − f_p²/2f²), with the plasma frequency f_p = 8.98 kHz × √(electrons per cm³). "
-               "The pulsar rows need a distance to turn the measured lag into a density: parallax for J0437−4715, about 2 kpc for the Crab. "
-               "The near-mass rows spread the delay over the path in the usual (isotropic) coordinates, so they depend on that choice; "
-               "the delay itself is a time. GW170817 and GRB 090510 need a travel time, which comes from a distance or a redshift.")
-
-
-PLASMA_SCALE = [[0.0, "#F7F1E6"], [0.35, brand.SAND], [0.7, brand.RUST], [1.0, "#4A2412"]]
-
-
-def page_plasma():
-    st.header("Plasma: the medium light crosses")
-    illustration_note("Its lags are DMs fitted with the 1/f² law, and its speeds come from the plasma formula, not from a measured ratio.")
-    st.markdown("""
-Space between the stars is not empty. Every path a radio signal has been timed along holds free electrons, so the
-emptiest "vacuum" anyone has measured is a very thin plasma. Plasma is a real medium for light, and it can be mapped.
-
-The reading is the one from the *Light* page, read along a path: **Q_c = signal speed ÷ the vacuum limit**. In plasma a
-signal at frequency f runs at Q_c = 1 − ½(f_p / f)², where f_p, the plasma frequency, grows as the square root of the
-electron density. So the departure **1 − Q_c grows with the density and falls with the square of the frequency**.
-
-What is measured is a time. A pulsar's pulse arrives later at low radio frequency than at high frequency, and the size of
-that lag is the **dispersion measure (DM)**: the number of free electrons along the whole path in a column one square
-centimeter across. It needs no distance.
-""")
-    f_ghz = st.sidebar.select_slider("Radio frequency (GHz)", options=[0.1, 0.2, 0.4, 0.7, 1.0, 1.4, 2.0, 4.0, 8.0], value=1.0,
-                                     key="plasma_f")
-    p = R.pulsars()
-    gal = ~np.isin(p["where"], ["LMC", "SMC"])
-
-    st.subheader("1. The plasma column on the sky")
-    o = np.argsort(p["dm"])
-    l180 = np.where(p["l"] > 180, p["l"] - 360, p["l"])
-    fig = go.Figure(go.Scattergl(
-        x=l180[o], y=p["b"][o], mode="markers", text=p["name"][o], customdata=np.c_[p["dm"][o], p["where"][o]],
-        marker=dict(size=5, color=np.log10(p["dm"][o]), colorscale=PLASMA_SCALE, cmin=0.5, cmax=3.2,
-                    colorbar=dict(title="log₁₀ DM", thickness=14)),
-        hovertemplate="%{text}<br>DM %{customdata[0]} pc/cm³<br>%{customdata[1]}<extra></extra>"))
-    base_layout(fig, "Galactic longitude (degrees)", "Galactic latitude (degrees)", height=480)
-    fig.update_xaxes(range=[180, -180], dtick=60)
-    fig.update_yaxes(range=[-90, 90], dtick=30)
-    st.plotly_chart(fig, width="stretch")
-    n_mc = int((~gal).sum())
-    st.markdown(f"""
-{len(p['dm']):,} pulsars, each placed by its direction alone and colored by its measured lag. The plasma is piled into the
-plane of the Galaxy. The two clumps lower right are {n_mc} pulsars in the Large and Small Magellanic Clouds: their
-signals cross our Galaxy's plasma and then another galaxy's.
-""")
-
-    st.subheader("2. The layer has a top")
-    s = p["dm"] * np.abs(np.sin(np.radians(p["b"])))
-    ceil, ceil_err, n_used = R.plasma_layer_ceiling()
-    fig = go.Figure()
-    for where, col in [("field", PALETTE[0]), ("globular cluster", PALETTE[5]), ("LMC", "#9AA5AB"), ("SMC", "#9AA5AB")]:
-        k = p["where"] == where
-        fig.add_trace(go.Scattergl(x=np.abs(p["b"][k]), y=s[k], mode="markers", name=where if where != "SMC" else "SMC",
-                                   marker=dict(size=6, color=col, opacity=0.7, symbol="circle" if where in ("field", "globular cluster") else "diamond"),
-                                   text=p["name"][k], hovertemplate="%{text}<br>|b| %{x:.1f}°<br>DM sin|b| %{y:.1f}<extra></extra>"))
-    fig.add_hline(opacity=1, y=ceil, line=dict(color=REF, dash="dash", width=1.5),
-                  annotation_text=f"ceiling {ceil:.1f} ± {ceil_err:.1f} pc/cm³", annotation_position="top right")
-    base_layout(fig, "angle above or below the Galactic plane, |b| (degrees)", "DM × sin|b| (column straight out of the disk, pc/cm³)",
-                ylog=True, height=460)
-    fig.update_yaxes(range=[-0.5, 2.6])
-    st.plotly_chart(fig, width="stretch")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Column straight out of the disk", f"{ceil:.1f} pc/cm³", f"median of {n_used} pulsars above 40°", delta_color="off")
-    c2.metric(f"Lag it adds at {f_ghz:g} GHz", f"{R.DM_DELAY_S * ceil / f_ghz ** 2 * 1e3:.0f} ms", "a timing, no distance", delta_color="off")
-    c3.metric("Read from", "angles and timing", "no distance used", delta_color="off")
-    st.markdown("""
-Tilting the line of sight by the angle b lengthens a path through a flat layer by 1/sin|b|. Multiplying the lag by sin|b|
-undoes that tilt, so the result is the column straight up out of the disk. Close to the plane it keeps growing, because
-those pulsars sit inside the layer. Higher up it stops growing: the pulsars are now above the plasma, and the whole layer is
-behind them. The level it stops at is the thickness of the plasma, counted in electrons. Points well above the line at
-25–45° are the Magellanic Clouds, which add a second galaxy's plasma.
-""")
-
-    st.subheader("3. Density along paths with a parallax")
-    d = R.parallax_path_densities()
-    dep = R.plasma_departure(d["n_e"], f_ghz)
-    fig = go.Figure(go.Scatter(
-        x=d["z"], y=d["n_e"], mode="markers", error_y=dict(type="data", array=d["n_e_err"], color="#9AA5AB", thickness=1),
-        marker=dict(size=9, color=PALETTE[1]), text=d["name"], customdata=np.c_[d["distance"], d["dm"], dep],
-        hovertemplate="%{text}<br>distance %{customdata[0]:.0f} pc (parallax)<br>DM %{customdata[1]:.3g}<br>"
-                      "mean n_e %{y:.3g} /cm³<br>1 − Q_c %{customdata[2]:.2g}<extra></extra>"))
-    base_layout(fig, "height above the Galactic plane, |z| (pc, from parallax)", "mean electron density on the path, DM ÷ distance (per cm³)",
-                xlog=True, ylog=True, height=460)
-    st.plotly_chart(fig, width="stretch")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Paths", f"{len(d['n_e'])}", "parallax better than 3σ", delta_color="off")
-    c2.metric("Typical density", f"{np.median(d['n_e']):.3f} /cm³", f"range {d['n_e'].min():.3f} to {d['n_e'].max():.2f}", delta_color="off")
-    c3.metric(f"Typical 1 − Q_c at {f_ghz:g} GHz", sci(np.median(dep)), "for visible light about 10¹¹ times smaller", delta_color="off")
-    st.markdown("""
-The parallax is an angle measured within the Galaxy, so these are the only paths with a length that is not itself a
-calculation from a model. About one free electron in every 60 cubic centimeters is typical. Paths that rise higher out of
-the plane average lower, as they should if the layer thins with height.
-""")
-
-    st.subheader("4. The contour map")
-    st.caption("Illustration, not a register: YMW16 is a model of the Galaxy's free electrons.")
-    g = R.ymw16_slices()
-    levels = dict(start=-4, end=0.5, size=0.5)
-    fig = make_subplots(rows=1, cols=2, column_widths=[0.45, 0.55], horizontal_spacing=0.09,
-                        subplot_titles=("Seen from above (mid-plane)", "Seen edge-on (through the Sun and the center)"))
-    fig.add_trace(go.Contour(x=g["face_x_pc"] / 1000, y=g["face_y_pc"] / 1000, z=g["face_log10_ne"], contours=levels,
-                             colorscale=PLASMA_SCALE, zmin=-4, zmax=0.5, line=dict(width=0.4, color=BLACK),
-                             colorbar=dict(title="log₁₀ n_e", thickness=14),
-                             hovertemplate="x %{x:.1f} kpc, y %{y:.1f} kpc<br>log₁₀ n_e %{z:.2f}<extra></extra>"), 1, 1)
-    fig.add_trace(go.Contour(x=g["edge_y_pc"] / 1000, y=g["edge_z_pc"] / 1000, z=g["edge_log10_ne"], contours=levels,
-                             colorscale=PLASMA_SCALE, zmin=-4, zmax=0.5, line=dict(width=0.4, color=BLACK), showscale=False,
-                             hovertemplate="along %{x:.1f} kpc, height %{y:.2f} kpc<br>log₁₀ n_e %{z:.2f}<extra></extra>"), 1, 2)
-    for r_, c_, x0, y0 in [(1, 1, 0, 8.3), (1, 2, 8.3, 0)]:
-        fig.add_trace(go.Scatter(x=[x0], y=[y0], mode="markers+text", text=["Sun"], textposition="top center", showlegend=False,
-                                 marker=dict(symbol="star", size=14, color=PALETTE[5], line=dict(width=1, color="white"))), r_, c_)
-    fig.update_xaxes(title="kpc", row=1, col=1); fig.update_yaxes(title="kpc", scaleanchor="x", row=1, col=1)
-    fig.update_xaxes(title="kpc along the Sun–center line", row=1, col=2); fig.update_yaxes(title="height (kpc)", row=1, col=2)
-    fig.update_layout(height=520, template="simple_white", margin=dict(l=60, r=20, t=50, b=50))
-    st.plotly_chart(fig, width="stretch")
-    st.markdown("""
-This is the YMW16 map of the Galaxy's free electrons. Seen from above, the spiral arms carry the densest plasma. Seen
-edge-on, it is a flattened disk one to two kiloparsecs thick, the layer whose top shows in section 2.
-
-**What this map is.** It is a model fitted to the lags of sections 1–3 together with pulsar distances from parallax and
-from the clusters and remnants pulsars sit in. The smooth parts (a thick disk, a thin disk, spiral arms, the Local Bubble,
-the Gum Nebula) are shapes the modelers chose. So the map is a reading built on distances and assumed shapes; sections
-1 and 2 are the measured part it rests on.
-""")
-
-    st.subheader("5. From the thinnest plasma to the densest")
-    lad = R.PLASMA_LADDER
-    cut = R.plasma_cutoff_ne(f_ghz)
-    fig = go.Figure()
-    for i, (name, lo, hi, how, kind) in enumerate(lad):
-        col = "#9AA5AB" if kind == "calculated" else PALETTE[0]
-        fig.add_trace(go.Scatter(x=[lo, hi], y=[name, name], mode="lines", line=dict(color=col, width=12), showlegend=False,
-                                 customdata=[[how, R.plasma_departure(lo, f_ghz), R.plasma_departure(hi, f_ghz)]] * 2,
-                                 hovertemplate=f"{name}<br>n_e %{{x:.2g}} /cm³<br>1 − Q_c at {f_ghz:g} GHz: "
-                                               "%{customdata[1]:.2g} to %{customdata[2]:.2g}<br>%{customdata[0]}<extra></extra>"))
-    fig.add_vline(opacity=1, x=cut, line=dict(color=REF, dash="dash", width=1.5),
-                  annotation_text=f"a {f_ghz:g} GHz signal cannot pass beyond here", annotation_position="bottom left")
-    base_layout(fig, "free electron density, n_e (per cm³)", "", xlog=True, height=500, log_ticks=False)
-    fig.update_xaxes(range=[-7.5, 10.5], dtick=1, exponentformat="power")
-    fig.update_yaxes(type="category", autorange="reversed", categoryorder="array", categoryarray=[r[0] for r in lad])
-    st.plotly_chart(fig, width="stretch")
-    rows = [dict(place=n, n_e=f"{sci(lo, 1)} – {sci(hi, 1)}", departure=f"{sci(R.plasma_departure(lo, f_ghz))} – {sci(R.plasma_departure(hi, f_ghz))}"
-                 if hi < cut else "does not pass", how=h, kind="illustration" if k == "calculated" else k) for n, lo, hi, h, k in lad]
-    st.markdown(f"""
-Sixteen decades of density, and every one measured except the first. Between galaxies the density comes from
-fast radio bursts, but turning their lag into a density needs a distance from redshift, so it is an illustration, shown in gray. At
-{f_ghz:g} GHz the departures run from about 10⁻¹⁷ to 10⁻², and to the right of the dashed line the plasma frequency is
-higher than the signal's, so the signal is turned back rather than slowed. That is why the ionosphere reflects
-short-wave radio.
-""")
-    show_table(rows, names={"place": "Place", "n_e": "n_e (per cm³)", "departure": f"1 − Q_c at {f_ghz:g} GHz",
-                            "how": "How the density is read", "kind": "Kind"}, wrap=True)
-
-    st.subheader("6. Plasma does not follow the mass")
-    zeta = st.select_slider("Cosmic-ray ionization rate per molecule (assumed, per second)", options=[1e-17, 3e-17, 1e-16],
-                            value=1e-17, format_func=lambda v: sci(v, 1))
-    ng = np.logspace(-2, 6, 200)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=ng, y=ng, mode="lines", name="every atom ionized (n_e = n_gas)", line=dict(color=REF, dash="dash", width=1.5)))
-    fig.add_trace(go.Scatter(x=ng, y=R.cosmic_ray_balance_ne(ng, zeta), mode="lines", name="only cosmic rays ionize (calculated)",
-                             line=dict(color=PALETTE[2], width=2.5)))
-    for i, (name, (g0, g1), (e0, e1)) in enumerate(R.PLASMA_VS_GAS):
-        fig.add_trace(go.Scatter(x=[g0, g1, g1, g0, g0], y=[e0, e0, e1, e1, e0], fill="toself", mode="lines", name=name + " (measured)",
-                                 line=dict(color=PALETTE[[0, 3, 1, 4][i]], width=2), opacity=0.55))
-    base_layout(fig, "gas density, atoms or molecules per cm³", "free electron density, n_e (per cm³)", xlog=True, ylog=True, height=500,
-                log_ticks=False)
-    fig.update_xaxes(exponentformat="power"); fig.update_yaxes(exponentformat="power", range=[-6, 6])
-    st.plotly_chart(fig, width="stretch")
-    st.markdown("""
-The densest gas in the Galaxy holds some of its thinnest plasma. A cold molecular cloud core has ten thousand times more
-gas than the warm ionized medium, yet fewer free electrons. The plasma is not hidden inside under a cold crust: radio
-passes straight through clouds and the pulsar lag counts every free electron on the path, and no pulsar shows the lag a
-fully ionized cloud would add (crossing one parsec of a core would add about 20,000; the largest measured anywhere is 1,778).
-The ionized gas sits on the *outside*, as thin skins on cloud faces lit by nearby stars, such as the Orion Bar.
-
-The pattern is a balance. Gas stays ionized only while something keeps knocking electrons off (starlight, cosmic rays,
-heat), and electrons recombine faster where the gas is denser. Starlight is used up in the outer skin; only cosmic rays
-reach the inside. Balancing the two gives electrons that grow as the **square root** of the gas density, the purple line.
-Where something powerful keeps every atom ionized, as in HII regions around hot stars, plasma follows the gas one for one.
-So plasma follows the energy supply, not the mass. The purple line is a calculation: it uses laboratory recombination rates
-and an assumed cosmic-ray rate, set by the slider.
-""")
-
-    st.subheader("7. A reading with two ideals: stopped and the vacuum limit")
-    st.markdown("""
-For a signal, Q_c runs between two ideals: **0, stopped**, and **1, the vacuum limit**. Neither is reached. Light has been
-"stopped" in cold atom clouds, but while it is stopped it has been handed to the atoms and is not there as light.
-
-Plasma spans the whole range in one form. Written in full, the signal reading is **Q_c = √(1 − (f_p / f)²)**: what sets it
-is a ratio, the signal's frequency against the medium's own natural frequency, with no fixed number in it.
-""")
-    x = np.logspace(-0.5, 2, 600)
-    fig = go.Figure()
-    fig.add_vrect(x0=10 ** -0.5, x1=1, fillcolor=brand.SAND_TINT, line_width=0, opacity=1)
-    fig.add_annotation(x=-0.25, y=1.6, text="turned back:<br>no signal passes", showarrow=False, font=dict(color=BLACK))
-    fig.add_trace(go.Scatter(x=x, y=R.plasma_signal_q(x), mode="lines", name="signal (group) speed ÷ limit",
-                             line=dict(color=BLACK, width=3), hovertemplate="f/f_p %{x:.3g}<br>Q_c %{y:.6g}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=x, y=R.plasma_crest_q(x), mode="lines", name="crest (phase) speed ÷ limit",
-                             line=dict(color=PALETTE[0], width=2.5, dash="dot"), hovertemplate="f/f_p %{x:.3g}<br>crest %{y:.6g}<extra></extra>"))
-    ref_line(fig, 1.0, "ideal: vacuum limit, Q = 1")
-    ref_line(fig, 0.0, "ideal: stopped, Q = 0")
-    places = [(n, np.sqrt(lo * hi)) for n, lo, hi, _, k in R.PLASMA_LADDER if k == "measured"]
-    pr = [(n, f_ghz * 1e9 / (R.F_P_PER_SQRT_NE * np.sqrt(ne))) for n, ne in places]
-    pr = [(n, r) for n, r in pr if 10 ** -0.5 < r < 100]
-    if pr:
-        fig.add_trace(go.Scatter(x=[r for _, r in pr], y=R.plasma_signal_q([r for _, r in pr]), mode="markers", name=f"places at {f_ghz:g} GHz",
-                                 marker=dict(size=11, color=PALETTE[1], line=dict(width=1, color="white")), text=[n for n, _ in pr],
-                                 hovertemplate="%{text}<br>f/f_p %{x:.3g}<br>Q_c %{y:.4g}<extra></extra>"))
-    base_layout(fig, "signal frequency ÷ the medium's plasma frequency, f / f_p", "Q_c", xlog=True, height=480)
-    fig.update_yaxes(range=[-0.05, 2.2])
-    st.plotly_chart(fig, width="stretch")
-    st.markdown(f"""
-- **Below f_p** no signal passes: it is turned back. This boundary is measured every day: ionosondes sweep a radio
-  frequency upward and read the layer's plasma frequency from where the echo returns.
-- **Just above f_p** Q_c reads close to 0. Read from there toward higher f / f_p, the departure from the vacuum ideal
-  shrinks smoothly, and **far above f_p** Q_c reads close to 1: starlight crossing the Galaxy. At {f_ghz:g} GHz most
-  places on the ladder are off the right edge, millions of times above their plasma frequency; a lower frequency on the
-  slider places them on the curve.
-- **The crests** (dotted) read above the limit, and their departure also shrinks toward 1 as f / f_p grows. Only the
-  signal carries information, and it never reads above 1.
-""")
-    st.subheader("Crossing states of matter")
-    rows = [dict(medium=n, state=n.split("(")[1].rstrip(")"), crest=q, side="below the limit", read=h) for n, q, h in R.CREST_ACROSS_STATES]
-    for n, lo, hi, _, k in R.PLASMA_LADDER:
-        if n in ("Warm ionized gas in the disk", "Earth's ionosphere, densest layer"):
-            ne = np.sqrt(lo * hi)
-            r = f_ghz * 1e9 / (R.F_P_PER_SQRT_NE * np.sqrt(ne))
-            q = float(R.plasma_crest_q(r))
-            rows.append(dict(medium=f"{n} at {f_ghz:g} GHz", state="plasma", crest=q,
-                             side="above the limit" if np.isfinite(q) else "turned back", read="radio timing and sounding"))
-    st.dataframe(pd.DataFrame(rows).rename(columns={"medium": "Medium", "state": "State", "crest": "Crest speed ÷ limit (1/n)",
-                                                    "side": "Side of the ideal", "read": "Read from"})
-                 .assign(**{"Crest speed ÷ limit (1/n)": lambda d: [
-                     "—" if not np.isfinite(q) else f"1 + {sci(q - 1)}" if 0 < q - 1 < 1e-4 else f"{q:.4f}"
-                     for q in d["Crest speed ÷ limit (1/n)"]]}), hide_index=True, width="stretch")
-    st.markdown("""
-In neutral matter, solid, liquid or gas, the crest reading is *below* the vacuum ideal. In plasma it reads *above*
-it, while the signal reading is still below. The states of matter sit on opposite sides of Q = 1, each departing
-from the same ideal from its own side. Solid and liquid water sit at different readings too (ice 0.764, water 0.750).
-
-Every medium has natural frequencies of its own: its plasma frequency, and the frequencies its atoms absorb. The reading
-changes on either side of each one. Below a cutoff nothing passes (plasma; metals, which is why they shine).
-At an absorption line the reading swings sharply. In a band gap (opals, photonic crystals) there is a forbidden range,
-with Q_c reading close to 0 at its edges. Different states of the same matter have different natural frequencies, so
-their boundaries sit in different places.
-
-*One caution:* right at an absorption line the group speed can read above 1, or negative; that has been measured. The
-front of a signal still never beats the limit, so the 0 to 1 bounds hold for the signal itself.
-""")
-
-    st.subheader("8. What plasma is not")
-    st.markdown("""
-- **Not the old ether.** The ether was meant to carry all light the same way. Plasma treats every frequency differently:
-  the lag is fitted as 1/frequency² from 40 MHz to 8 GHz in pulsars and fast radio bursts, though no single power law fits every pulsar's residuals across the band (Hassall et al. 2012). For visible light the
-  departure is about 10¹¹ times smaller than at 1 GHz, so starlight crosses the Galaxy as if the plasma were not there.
-- **Not the cause of light slowing near mass.** Cassini timed the Sun's delay in two radio bands at once. The plasma part
-  changed with frequency as 1/f² and was subtracted; the part from the Sun's mass was the same in both bands. The two
-  departures are separate in the measurements (see *Gravity: departure from G* and *Light*).
-- **Not a fixed frame.** The plasma moves: the solar wind blows outward at 400 km/s, the Galaxy's gas turns with the disk.
-  Like everything else here, it is one more thing moving relative to everything else.
-
-As everywhere in FDG, the vacuum limit is an ideal. Plasma is one of the measured reasons nothing reaches it: no path
-anyone has timed is empty.
-""")
-    st.caption("Pulsar lags: ATNF Pulsar Catalogue v1.59. Parallax densities use D = 1/parallax and leave out globular-cluster "
-               "pulsars. The map: YMW16, evaluated with pygedm (Price et al. 2021) and stored as two slices. "
-               "Plasma departures use the signal (group) speed, c(1 − f_p²/2f²), with f_p = 8.98 kHz × √(electrons per cm³).")
-
-
-def page_motion():
-    st.header("No fixed point: relative motion")
-    illustration_note("It shows what is measured and what is calculated beyond the Galaxy.")
-    st.markdown("""
-In plate tectonics every measurement is one plate moving against another. Absolute plate speeds only appear once a
-reference frame is chosen, such as the hotspots or a no-net-rotation frame, and even the hotspots drift. Beyond our Galaxy
-the sky is in the same position. What arrives at a detector is a **frequency ratio** (redshift), an **angle**, and **an
-angle per unit time**. Every speed and distance out there comes from one of those plus a chosen frame or a chosen distance.
-Expansion is that kind of choice, made for the whole universe at once: it turns redshift into speed and distance.
-""")
-
-    st.subheader("1. Andromeda: what is measured, and what is calculated")
-    mu, mu_e = R.m31_pm_total()
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Redshift (measured)", f"z = {R.M31['v_helio'] / R.C_KMS:.4f}".replace("-", "−"),
-              f"closing at {-R.M31['v_helio']:.0f} ± {R.M31['v_helio_e']:.0f} km/s along the line of sight", delta_color="off")
-    c2.metric("Sideways drift (measured)", f"{mu:.0f} ± {mu_e:.0f} µas/yr",
-              "an angle per year", delta_color="off")
-    c3.metric("Distance (calculated)", f"{min(d for _, d, _ in R.M31_DISTANCES)}–{max(d for _, d, _ in R.M31_DISTANCES)} kpc",
-              "from the Cepheid / TRGB / eclipsing-binary ladder", delta_color="off")
-    st.markdown("The line-of-sight closing speed between the Sun and Andromeda is a Doppler measurement. A sideways speed "
-                "needs a distance, so **the answer to “is it a head-on collision?” is set by the distance chosen.**")
-
-    d_pick = st.sidebar.slider("Assumed distance to Andromeda (kpc)", 500, 1000, 770, 10)
-    v_c = st.sidebar.slider("Assumed rotation speed of the Galaxy at the Sun (km/s)", 200, 260, 235, 5)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        d = np.linspace(500, 1000, 101)
-        vt, vt_e = R.m31_transverse(d)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=np.r_[d, d[::-1]], y=np.r_[vt + vt_e, (vt - vt_e)[::-1]], fill="toself",
-                                 fillcolor="rgba(180,83,42,0.15)", line=dict(width=0), name="proper-motion error", hoverinfo="skip"))
-        fig.add_trace(go.Scatter(x=d, y=vt, mode="lines", line=dict(color=brand.RUST, width=2.5), name="sideways speed = 4.74 µ d"))
-        for i, (n, dv, de) in enumerate(R.M31_DISTANCES):
-            v, _ = R.m31_transverse(dv)
-            fig.add_trace(go.Scatter(x=[dv], y=[v], mode="markers", marker=dict(size=10, color=PALETTE[(i + 1) % 6]),
-                                     error_x=dict(type="data", array=[de]), name=n))
-        fig.add_hline(opacity=1, y=-R.M31["v_helio"], line=dict(color=REF, dash="dash", width=1.5),
-                      annotation_text="measured line-of-sight closing speed", annotation_position="top left")
-        base_layout(fig, "assumed distance (kpc)", "sideways speed relative to the Sun (km/s)", height=430)
-        fig.update_yaxes(range=[0, 360])
-        fig.update_layout(legend=dict(orientation="h", y=-0.3, font=dict(size=11)))
-        st.plotly_chart(fig, width="stretch")
-        v_pick, v_pick_e = R.m31_transverse(d_pick)
-        st.caption(f"At your assumed {d_pick} kpc the drift becomes {float(v_pick):.0f} ± {float(v_pick_e):.0f} km/s sideways. "
-                   "Speed is in direct proportion to the distance chosen: double the distance and you double the speed. Each published distance "
-                   "puts Andromeda at a different point on this line.")
-    with c2:
-        vc = np.linspace(200, 260, 61)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=vc, y=-R.m31_galactocentric_radial(vc), mode="lines", line=dict(color=BLACK, width=2.5),
-                                 name="closing speed seen from the Galaxy's center"))
-        fig.add_hline(opacity=1, y=-R.M31["v_helio"], line=dict(color=REF, dash="dash", width=1.5),
-                      annotation_text="measured from the Sun: 300 km/s", annotation_position="bottom left")
-        fig.add_trace(go.Scatter(x=[v_c], y=[-float(R.m31_galactocentric_radial(v_c))], mode="markers",
-                                 marker=dict(size=12, color=brand.RUST), name="your assumed rotation speed"))
-        base_layout(fig, "assumed rotation speed of the Galaxy at the Sun (km/s)", "closing speed (km/s)", height=430)
-        fig.update_yaxes(range=[0, 330])
-        fig.update_layout(legend=dict(orientation="h", y=-0.3, font=dict(size=11)))
-        st.plotly_chart(fig, width="stretch")
-        st.caption(f"The often-quoted ~110 km/s is the 300 km/s Doppler speed minus the Sun's own orbital speed, "
-                   f"which comes from a Galaxy model. At {v_c} km/s the closing speed is {-float(R.m31_galactocentric_radial(v_c)):.0f} km/s. "
-                   "Changing the frame changes the speed by almost a factor of three.")
-
-    st.subheader("2. Looming: time to contact from angles")
-    st.markdown("An object coming toward you grows on the sky. Its angular size divided by its rate of growth is the **time "
-                "to contact**, τ = θ / (dθ/dt) (Lee 1976). Flies and drivers use the same quantity. Multiply τ "
-                "by the measured closing speed and you get a distance.")
-    tau, rel, rate1 = R.looming(d_pick)
-    _, _, rate_full = R.looming(d_pick, R.M31["theta_deg"])
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Time to contact this implies", f"{float(tau):.2f} billion years", f"at your assumed {d_pick} kpc", delta_color="off")
-    c2.metric("Growth of Andromeda's full width", f"{float(rate_full):.1f} µas/yr", f"{R.M31['theta_deg']}° across", delta_color="off")
-    c3.metric("Growth of a 1° separation", f"{float(rate1):.1f} µas/yr", "e.g. between two of its star clusters", delta_color="off")
-    st.markdown(f"Gaia measures Andromeda's whole sideways drift to about ±{mu_e:.0f} µas/yr. The looming signal is a few µas/yr, "
-                "below that today. Precision grows with the time baseline, so more years of Gaia data will bring it within reach.")
-
-    st.subheader("3. The sky's \"hotspot\": two rest frames that disagree")
-    dr = R.dipole_register()
-    st.markdown(f"""
-The microwave sky is **{R.CMB_DIPOLE['dT_mK']:.3f} mK** warmer in one direction, a fraction **{sci(dr['beta'], 3)}** of its
-{R.CMB_DIPOLE['T0_K']} K temperature. That is measured. Reading all of it as our motion gives **{dr['v_kms']:.0f} km/s**. If that reading is right, distant quasars should bunch toward the same direction by a
-predicted amount. They point **{dr['offset_deg']:.0f}°** away, and bunch too strongly.
-""")
-    c1, c2 = st.columns([3, 2])
-    with c1:
-        pts = [("CMB dipole (measured direction)", R.CMB_DIPOLE["l"], R.CMB_DIPOLE["b"], brand.RUST, "circle"),
-               ("Quasar-count dipole (CatWISE)", R.QUASAR_DIPOLE["l"], R.QUASAR_DIPOLE["b"], PALETTE[1], "diamond"),
-               ("Andromeda", R.M31["l"], R.M31["b"], PALETTE[2], "star")]
-        fig = go.Figure()
-        for n, l, b, col, sym in pts:
-            fig.add_trace(go.Scattergeo(lon=[-(l if l <= 180 else l - 360)], lat=[b], mode="markers+text", text=[n.split(" (")[0]],
-                                        textposition="top center", marker=dict(size=13, color=col, symbol=sym), name=n))
-        edge = np.linspace(-90, 90, 91)
-        fig.add_trace(go.Scattergeo(lon=np.r_[np.full(91, 179.9), np.full(91, -179.9)], lat=np.r_[edge, edge[::-1]], mode="lines",
-                                    line=dict(color=REF, width=1), hoverinfo="skip", showlegend=False))
-        fig.add_trace(go.Scattergeo(lon=np.linspace(-180, 180, 181), lat=np.zeros(181), mode="lines",
-                                    line=dict(color=REF, width=1, dash="dot"), name="plane of the Galaxy", hoverinfo="skip"))
-        fig.update_geos(projection_type="mollweide", showland=False, showcoastlines=False, showframe=False,
-                        lataxis=dict(showgrid=True, gridcolor="#E3E6E5", dtick=30, range=[-90, 90]), lonaxis=dict(showgrid=True, gridcolor="#E3E6E5", dtick=60, range=[-180, 180]),
-                        bgcolor="rgba(0,0,0,0)")
-        fig.update_layout(title_text="", height=380, margin=dict(l=10, r=10, t=10, b=10), legend=dict(orientation="h", y=-0.05))
-        st.plotly_chart(fig, width="stretch")
-        st.caption("Whole sky in Galactic coordinates, drawn the way astronomers do: the Galaxy's center in the middle, "
-                   "its disk along the equator, longitude increasing to the left.")
-    with c2:
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=[0], y=[dr["Q"]], mode="markers", marker=dict(size=14, color=BLACK),
-                                 error_y=dict(type="data", array=[dr["Q_e"]], thickness=1.5, width=10), name="measured"))
-        ref_line(fig, 1.0, "one shared rest frame, Q = 1")
-        base_layout(fig, "quasar dipole ÷ CMB prediction", "Q", height=380)
-        fig.update_xaxes(range=[-1, 1], showticklabels=False, showgrid=False)
-        fig.update_yaxes(range=[0, 3])
-        fig.update_layout(showlegend=False)
-        st.plotly_chart(fig, width="stretch")
-    st.markdown(f"**Q = {dr['Q']:.2f} ± {dr['Q_e']:.2f}.** The quasars bunch about twice as strongly as the CMB speed predicts, "
-                f"about {R.QUASAR_DIPOLE['sigma']}σ from a shared frame. Like hotspots that turn out to drift against each other, "
-                "the two best candidates for a fixed frame do not agree.")
-    st.caption("CMB dipole: Planck 2018. Quasar dipole: Secrest et al. 2021 (CatWISE2020), testing the prediction of "
-               "Ellis & Baldwin (1984) that source counts should share the CMB dipole. The ± on Q is backed out from their "
-               "quoted significance. The quasar frame is also used, through VLBI and Gaia, to fix directions on the sky: it pins "
-               "orientation but carries no speed or position.")
-
-    st.subheader("4. The same move, made for the whole universe")
-    st.dataframe(pd.DataFrame([
-        ["Andromeda's line-of-sight speed", "redshift (frequency ratio)", "nothing: local Doppler", "—"],
-        ["Andromeda's sideways speed", "angle per year", "a distance", "the distance ladder"],
-        ["Andromeda's speed toward the Galaxy", "redshift", "the Sun's orbit", "a Galaxy rotation model"],
-        ["Our speed through the universe", "CMB temperature dipole", "that the dipole is all motion", "a CMB rest frame (quasars disagree)"],
-        ["Distance and speed of far galaxies", "redshift", "that redshift is recession", "expansion"],
-    ], columns=["Quantity", "What is measured", "What has to be added", "Assumption"]), hide_index=True, width="stretch")
-    st.caption("The registers are built from the left-hand column: redshift, angle, flux and time ratios.")
 
 
 TAGLINE = "Read the shape of the universe from measurements, by comparing each measured value with its ideal."
@@ -1632,22 +542,12 @@ PAGE_LIST = [
     ("", None, "Home", "home"),
     ("Start here", page_premise, "Premise", "premise"),
     ("Start here", page_overview, "All registers", "all-registers"),
-    ("Start here", page_same_shape, "Do they share a shape?", "same-shape"),
     ("Shape", page_shape, "Shape: solids and spheres", "solids"),
     ("Shape", page_outline, "Shape: outlines (2D)", "outlines"),
     ("Light across redshift", page_flux, "Flux dimming", "flux"),
     ("Light across redshift", page_time, "Time dilation", "time-dilation"),
-    ("Light across redshift", page_aging, "Aging rate", "aging"),
-    ("Light across redshift", page_angle, "Acoustic angle", "acoustic-angle"),
     ("Lensing", page_cusp, "Cusp", "cusp"),
     ("Light and its medium", page_light_speed, "Light: vacuum limit", "light-speed"),
-    ("Illustrations (not registers)", page_rotation, "Rotation", "rotation"),
-    ("Illustrations (not registers)", page_single, "Clock & deflection", "clock-deflection"),
-    ("Illustrations (not registers)", page_light_matter, "Light and matter together", "light-and-matter"),
-    ("Illustrations (not registers)", page_gravity, "Gravity: departure from G", "gravity"),
-    ("Illustrations (not registers)", page_mass, "Mass: a reading", "mass"),
-    ("Illustrations (not registers)", page_plasma, "Plasma: the medium light crosses", "plasma"),
-    ("Illustrations (not registers)", page_motion, "No fixed point", "no-fixed-point"),
     ("Sources", sources.page, "Sources", "sources"),
 ]
 
@@ -1655,22 +555,12 @@ PAGE_LIST = [
 ABOUT = {
     "premise": "what a register is, why use them, and what they leave out",
     "all-registers": "every register on one screen, each against its ideal",
-    "same-shape": "whether the redshift registers bend the same way",
     "solids": "faceted solids closing in on a perfect sphere, and real bodies",
-    "outlines": "polygons, planetary orbits and craters against a perfect circle",
-    "flux": "how supernova light dims with redshift (Pantheon+, DES)",
+    "outlines": "polygons and craters against a perfect circle",
+    "flux": "how supernova light dims with redshift (Pantheon+)",
     "time-dilation": "how far distant light curves stretch",
-    "aging": "galaxies used as clocks across redshift",
-    "acoustic-angle": "the preferred angle between galaxy pairs",
     "cusp": "the brightness of lensed image triplets",
-    "rotation": "how fast disk galaxies spin against their visible matter",
-    "clock-deflection": "two single-value registers: clocks and light passing the Sun",
-    "light-and-matter": "light and motion read on one object (S2, binary pulsars)",
-    "gravity": "gravity read as a departure from one G",
-    "mass": "how much of a mass is measured and how much is assumed",
-    "light-speed": "light speed in glass, plasma and near mass",
-    "plasma": "the free electrons light passes through on the way here",
-    "no-fixed-point": "why there is no fixed point to measure from beyond the Galaxy",
+    "light-speed": "light speed in glass, water, air and cold atoms",
     "sources": "the data and papers behind every page",
 }
 
@@ -1680,8 +570,6 @@ GROUP_ABOUT = {
     "Light across redshift": "What happens to light from farther and farther away.",
     "Lensing": "The brightness of lensed image triplets.",
     "Light and its medium": "How fast light travels, and what it travels through.",
-    "Illustrations (not registers)": "Pages that use an assumption (a theory prediction, a distance, a mass-to-light ratio). "
-                                     "They compare against the registers but are never registers themselves.",
     "Sources": "Where the data come from.",
 }
 
@@ -1699,7 +587,7 @@ def page_home():
             "measurement and divides it by its ideal value. The result is called **Q**:\n\n"
             "- **Q = 1** means the measurement matches the ideal exactly.\n"
             "- **Q above or below 1** means it departs from the ideal, and by how much.\n\n"
-            "For example, a planet's orbit can be compared with a perfect circle, or the dimming of supernova light "
+            "For example, a crater's rim can be compared with a perfect circle, or the dimming of supernova light "
             "with the simple straight-line rule seen in nearby supernovae. Because Q has no units, very different "
             "things can be read side by side. The size of each departure, and how it changes, is what the pages show.")
     st.markdown(

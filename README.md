@@ -6,18 +6,18 @@ The geometry of the universe, read from measurements. A [Dougalien Systems](http
 
 **Live app:** https://doug-cosmology.streamlit.app/
 
-A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app lays published measurements side by side as registers: shape (solids, spheres, outlines, orbits, craters), flux dimming (Pantheon+ supernovae), time dilation, aging rate (cosmic chronometers), the acoustic angle, cusp flux ratios, galaxy rotation (SPARC), single-value registers, light and matter read together on one object (S2 and binary pulsars), gravity as a departure from one G, light speed as a departure from the vacuum limit, mass as a reading built from measured angles, times and Doppler shifts plus assumed distances and shapes, whether the redshift registers share one shape, and relative motion. Each page shows its data and sources.
+A register is a measured value divided by its ideal value, so the ideal sits at Q = 1. The app shows only registers: shape (solids, spheres, polygons, craters), flux dimming (Pantheon+ raw peak magnitudes, heliocentric redshifts), time dilation (supernovae), cusp flux ratios, and light speed in matter as a departure from the vacuum limit. Each page shows its data and sources.
 
 ## Standing order: protect the registers
 
 The registers are the most important part of FDG.
 
 - **A register stands alone, without interpretation.** It is a measured value divided by a geometry-free ideal. Its measured side holds only what arrives at a detector (angles, counts, fluxes, frequency ratios, times). Its ideal takes no theory of the object: no GR or PPN prediction, no equivalence-principle formula, no expansion.
-- **Anything that uses an assumption is an illustration, never a register.** That covers a distance beyond parallax, a mass-to-light ratio, a GR ideal or a model map. Illustrations are kept and labeled, under *Illustrations (not registers)* in the menu, or marked row by row on a register page.
+- **Anything that uses an assumption is not a register and is not shown in this app.** That covers a distance beyond parallax, a mass-to-light ratio, a GR ideal, a frame or local-motion correction, or a model map.
 - **Registers can be used in calculations** to compare or estimate things. That work never changes a register and is never called a register.
 - Work on gravity or cosmology must not break or interfere with the registers.
 
-Currently illustrations: Rotation, Clock & deflection, Light and matter together, Gravity: departure from G, Mass, Plasma, No fixed point. There is no plasma register: published pulsar lags are DMs fitted with the 1/f² law. Also the near-mass, vacuum-test, calculated and Crab rows on Light speed,.
+The app shows registers only (2026-11-14): Shape (solids, polygons, craters), Flux dimming (Pantheon+ raw mB, zHEL; SALT2 training uses no distances or cosmology, Guy et al. 2007 §1), Time dilation (supernovae), Cusp, and Light speed in matter (glass, water, air, cold atoms). Removed because a model sits on the measured side: supernova distance moduli and DES 5-year (bias corrections simulated in flat ΛCDM, Brout et al. 2022 §3.1), cosmic-chronometer aging (stellar population ages), thin-shell acoustic angles (projection correction in Planck ΛCDM, de Carvalho et al. 2021 §4.2), orbital eccentricities (ephemeris fits), the Lewis & Brewer quasar and Goldhaber 2001 time-dilation rows (methods not verified), and all earlier illustration pages. All are in git history. There is no plasma register: published pulsar lags are DMs fitted with the 1/f² law (Hassall et al. 2012).
 
 ## Run it
 
@@ -34,7 +34,7 @@ To put it online, sign in at [share.streamlit.io](https://share.streamlit.io), c
 | --- | --- |
 | `register_app.py` | The pages |
 | `registers.py` | The register calculations and data loading |
-| `register_data/` | Published data the registers read (Pantheon+, SPARC, chronometers, Planck, crater counts) |
+| `register_data/` | Published data the registers read (Pantheon+, DES, chronometers, crater counts; some files are no longer read by a page) |
 | `dougalien_brand.py`, `assets/`, `.streamlit/config.toml` | The Dougalien Systems look |
 
 The full Pantheon+ STAT+SYS covariance is large and is read from a local folder when present; without it the app uses the binned data and says so.

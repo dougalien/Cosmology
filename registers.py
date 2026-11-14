@@ -171,50 +171,50 @@ def _pantheon_plus_table():
         cols = f.readline().split()
         rows = [l.split() for l in f if l.strip()]
     col = {c: i for i, c in enumerate(cols)}
-    return {c: np.array([float(r[col[c]]) for r in rows]) for c in ("zHD", "zCMB", "m_b_corr", "IS_CALIBRATOR", "m_b_corr_err_DIAG")}
+    t = {c: np.array([float(r[col[c]]) for r in rows]) for c in ("zHEL", "mB", "mBERR", "IS_CALIBRATOR")}
+    t["CID"] = np.array([r[col["CID"]] for r in rows])
+    return t
 
 
 def pantheon_cov_available():
     return os.path.exists(PANTHEON_COV)
 
 
-def load_pantheon_plus(full_cov=True):
+def load_pantheon_plus():
+    """Pantheon+ raw SALT2 peak magnitudes mB: no bias correction (its simulations assume flat LCDM, Brout et al. 2022
+    Sec. 3.1), no stretch or colour standardization, no host-mass step. A supernova observed by several surveys is
+    averaged (inverse-variance) so it counts once. Bin errors are the standard error of the bin's own scatter (mBERR alone omits the
+    spread between supernovae)."""
     t = _pantheon_plus_table()
-    n = len(t["zHD"])
-    if full_cov and pantheon_cov_available():
-        import pandas as pd
-        cov = pd.read_csv(PANTHEON_COV, header=None, skiprows=1, engine="c").to_numpy().reshape(n, n)
-    else:
-        cov = np.diag(t["m_b_corr_err_DIAG"] ** 2)
-    return t, cov
+    cids, inv = np.unique(t["CID"], return_inverse=True)
+    w = 1 / t["mBERR"] ** 2
+    W = np.bincount(inv, w)
+    out = {"zHEL": np.bincount(inv, w * t["zHEL"]) / W, "mB": np.bincount(inv, w * t["mB"]) / W,
+           "IS_CALIBRATOR": np.bincount(inv, t["IS_CALIBRATOR"]) > 0}
+    return out, None  # no covariance: bin errors come from the scatter of the data themselves
 
 
-@lru_cache(maxsize=1)
-def load_des5yr():
-    """DES 5-year supernovae (DES-Dovekie release): a table shaped like Pantheon+ for flux_dimming_plus, and its
-    STAT+SYS covariance. MU is the bias-corrected distance modulus; its zero point (H0 = 70) cancels in the register.
-    The release stores the inverse covariance as an upper triangle."""
-    rows = [l.split() for l in open(os.path.join(DATA, "DES-Dovekie_HD.csv")) if l.startswith("SN:")]
-    survey = np.array([int(r[2]) for r in rows])
-    z = np.array([float(r[3]) for r in rows])
-    mu = np.array([float(r[5]) for r in rows])
-    d = np.load(os.path.join(DATA, "DES-Dovekie_STAT+SYS_invcov.npz"))
-    n = int(d["nsn"][0])
-    ic = np.zeros((n, n))
-    ic[np.triu_indices(n)] = d["cov"]
-    ic = ic + ic.T - np.diag(np.diag(ic))
-    t = {"zHD": z, "zCMB": z, "m_b_corr": mu, "IS_CALIBRATOR": np.zeros(n, int), "IDSURVEY": survey}
-    return t, np.linalg.inv(ic)
-
-
-def flux_dimming_plus(t, cov, zcol="zHD", lo=(0.015, 0.06), nbins=17, zmax=2.3):
+def flux_dimming_plus(t, cov, zcol="zHEL", lo=(0.015, 0.06), nbins=17, zmax=2.3):
     """GLS-binned flux-dimming register, as in clean_registers/flux_dimming_cov.py."""
     z = t[zcol]
     keep = (t["IS_CALIBRATOR"] == 0) & (z > 0.01)
     idx = np.where(keep)[0]
-    y = t["m_b_corr"][idx] - 5 * np.log10(z[idx])
-    C = cov[np.ix_(idx, idx)]
+    y = t["mB"][idx] - 5 * np.log10(z[idx])
     zz = z[idx]
+    if cov is None:  # plain bin means; errors from each bin's own scatter
+        anchor = (zz >= lo[0]) & (zz < lo[1])
+        m0, s0 = y[anchor].mean(), y[anchor].std(ddof=1) / np.sqrt(anchor.sum())
+        edges = np.geomspace(lo[1], zmax, nbins + 1)
+        zb, Q, sQ, nb = [], [], [], []
+        for a, b in zip(edges[:-1], edges[1:]):
+            mk = (zz >= a) & (zz < b)
+            if mk.sum() >= 5:
+                d = y[mk].mean() - m0
+                sd = np.hypot(y[mk].std(ddof=1) / np.sqrt(mk.sum()), s0)
+                q = 10 ** (d / 5)
+                zb.append(np.exp(np.mean(np.log(zz[mk])))); Q.append(q); sQ.append(q * np.log(10) / 5 * sd); nb.append(int(mk.sum()))
+        return np.array(zb), np.array(Q), np.array(sQ), np.array(nb), int(anchor.sum()), len(idx)
+    C = cov[np.ix_(idx, idx)]
 
     def wts(mask):
         Ci = np.linalg.inv(C[np.ix_(mask, mask)])
@@ -294,11 +294,11 @@ def time_dilation():
     rows = _csv("stage10_real_published_time_dilation_constraints.csv")
     out = []
     for r in rows:
+        if r["study"].startswith("Goldhaber"):  # method not verified (2026-11-14), so not shown as a register
+            continue
         out.append(dict(study=r["study"], b=float(r["b"]), err=float(r["sigma_total_quadrature"]),
                         zmin=float(r["z_min"]) if r["z_min"] else None,
                         zmax=float(r["z_max"]) if r["z_max"] else None, n=r["sample_size"]))
-    out.append(dict(study="Lewis & Brewer 2023 (quasars)", b=1.28, err=0.285, zmin=None, zmax=None, n="",
-                    err_lo=0.29, err_hi=0.28))
     return out
 
 
