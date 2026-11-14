@@ -870,6 +870,23 @@ should: the part that disagrees is relative motion.
                f"From the turn and the clock term: {ht['m1']:.3f} and {ht['m2']:.3f} solar masses. The only π is 2π per orbit, "
                "which turns one orbit into radians: a unit, not a limit.")
 
+    st.subheader("3. The lock against the strength of the pull")
+    lock = [c for c in R.gravity_compact() if c[4] in ("Binary pulsars", "Galactic center")]
+    fig = go.Figure()
+    for i, (name, g, qq, e, grp) in enumerate(lock):
+        fig.add_trace(errpts([g], [qq], [e], name, color=PALETTE[i % len(PALETTE)], size=10, text=[name]))
+    fig.add_hline(y=1.0, line=dict(color=REF, dash="dash", width=1.5), annotation_text="ideal, Q = 1")
+    base_layout(fig, "pull from the system's own matter (m/s²)", "Q (light register against matter register)", xlog=True, height=420)
+    st.plotly_chart(fig, width="stretch")
+    span = np.log10(max(c[1] for c in lock) / min(c[1] for c in lock))
+    worst = max(abs(c[2] - 1) / c[3] for c in lock)
+    st.markdown(f"If one cause sets both registers, the lock should not depend on how strong the pull is. Across "
+                f"**{span:.1f} decades of pull** every system sits at Q = 1 within **{worst:.1f}** of its own error, with no "
+                "trend. That supports one cause; it does not say which one.")
+    st.caption("Pulsar pulls come from the orbital period and the masses, which are times, by Kepler's third law. S2's pull "
+               "uses its closest approach, which needs the distance to the Galactic center. The Hulse–Taylor point is the one "
+               "with the Galaxy's pull removed, which also needs a distance.")
+
     st.subheader("What this says about a mechanism")
     st.markdown("""
 - The light and matter registers are **not independent** in any system where both are read. Their ratio sits at Q = 1 to
