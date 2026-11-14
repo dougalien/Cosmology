@@ -17,7 +17,7 @@ The registers are the most important part of FDG.
 - **Registers can be used in calculations** to compare or estimate things. That work never changes a register and is never called a register.
 - Work on gravity or cosmology must not break or interfere with the registers.
 
-Currently illustrations: Rotation, Clock & deflection, Light and matter together, Gravity: departure from G, Mass, No fixed point. Also the near-mass, vacuum-test, calculated and Crab rows on Light speed, and the YMW16 map and FRB row on Plasma.
+Currently illustrations: Rotation, Clock & deflection, Light and matter together, Gravity: departure from G, Mass, Plasma, No fixed point. There is no plasma register: published pulsar lags are DMs fitted with the 1/f² law. Also the near-mass, vacuum-test, calculated and Crab rows on Light speed,.
 
 ## Run it
 
